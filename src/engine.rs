@@ -18,12 +18,17 @@ impl Vertex{
 use glium::{glutin, Surface};
 use glium::index::PrimitiveType;
 
+
 pub fn run() {
     let event_loop = glutin::event_loop::EventLoop::new();
-    let wb = glutin::window::WindowBuilder::new();
+    let wb = glutin::window::WindowBuilder::new().with_title("Snake")
+    .with_resizable(false)
+    .with_inner_size(glutin::dpi::Size::Logical(glutin::dpi::LogicalSize{width: 500.,height: 500.}));
+    
+
+
     let cb = glutin::ContextBuilder::new();
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
-
     // building the vertex buffer, which contains all the vertices that we will draw
     
         
@@ -75,8 +80,15 @@ pub fn run() {
     //
     // In this case we use a closure for simplicity, however keep in mind that most serious
     // applications should probably use a function that takes the resources as an argument.
+
+
+    
+
+
+
     let mut snake = Snake::new(true);
-    let mut draw = move || {
+    let mut draw = move |x: u32| {
+        snake.keypr(x);
         // building the uniforms
         let uniforms = uniform! {
             matrix: [
@@ -89,7 +101,7 @@ pub fn run() {
 
         // drawing a frame
         let mut target = display.draw();
-        target.clear_color(0.0, 0.0, 0.0, 0.0);
+        target.clear_color(0.0, 0., 0.5, 0.0);
         let (pbuf,fbuf) = snake.render();
         let index_buffer = glium::IndexBuffer::new(&display, PrimitiveType::TrianglesList,
             &fbuf).unwrap();
@@ -98,26 +110,42 @@ pub fn run() {
         let vertex_buffer =     glium::VertexBuffer::new(&display,
             &pbuf
         ).unwrap();
+        let (new_title, title) = snake.title();
+
+        if new_title{
+        println!("b{},{}",new_title,title);
+
+            display.gl_window().window().set_title(title);
+        }
 
 
         target.draw(&vertex_buffer, &index_buffer, &program, &uniforms, &Default::default()).unwrap();
+        
         target.finish().unwrap();
     };
 
     // Draw the triangle to the screen.
-    draw();
+    draw(0);
 
     // the main loop
     event_loop.run(move |event, _, control_flow| {
+       
         *control_flow = match event {
             glutin::event::Event::WindowEvent { event, .. } => match event {
                 // Break from the main loop when the window is closed.
                 glutin::event::WindowEvent::CloseRequested => glutin::event_loop::ControlFlow::Exit,
                 // Redraw the triangle when the window is resized.
                 glutin::event::WindowEvent::Resized(..) => {
-                    draw();
+                    draw(0);
                     glutin::event_loop::ControlFlow::Poll
                 },
+                glutin::event::WindowEvent::Focused(a) =>{
+                    if a {
+                        draw(0);
+                    }
+                    glutin::event_loop::ControlFlow::Poll
+
+                }
 
           
                 _ => glutin::event_loop::ControlFlow::Poll,
@@ -125,11 +153,9 @@ pub fn run() {
             glutin::event::Event::DeviceEvent { device_id: _, event }=>{
                 match event {
                     glutin::event::DeviceEvent::Key(a) =>{
-                        match a.scancode {
-                            a=>{
-                                println!("button: {}",a);
-                            }
-                        }
+                        draw(a.scancode);
+                       //s println!("key: {}",a.scancode);
+                        
 
                         glutin::event_loop::ControlFlow::Poll
                     }
@@ -137,7 +163,10 @@ pub fn run() {
                     _=>glutin::event_loop::ControlFlow::Poll
                 }
             }
-            _ => glutin::event_loop::ControlFlow::Poll,
+            _ =>{ 
+                draw(0);
+                glutin::event_loop::ControlFlow::Poll
+            },
         };
     });
 }
