@@ -33,15 +33,18 @@ struct Snake{
     title: String
 }
 impl Snake{
+
     pub fn new(d: bool)->Self{
+        let mut snake = Self { titbool: false, title:s!("Snake"), data: Vec::new(), data_long: Vec::new(),key:0, updater: Fne::None};
+
         match d{
             true =>{
-                
+                snake.updater = Self::fun_update();
         
-                Self { titbool: false, title:s!("Snake"), data: Vec::new(), data_long: Vec::new(),key:0, updater:Self::fun_update()}
+               return snake
             } 
             false =>{
-                Self { titbool: false, title:s!("Snake"), data: Vec::new(), data_long: Vec::new(),key:0, updater: Fne::None}
+                return snake
 
             }
 
@@ -105,13 +108,11 @@ impl Snake{
                 }
             }
 
-            if frame % 100 == 0{
+            if frame % 1000 == 0{
                 x+=ax;
                 y+=ay;
                 snakebod.push([x, y]);
                 s.change_title("Mashalla");
-
-
             }
                 
             // push the new bodypart
@@ -226,6 +227,6 @@ impl Snake{
 
 fn main() {
     
-        engine::run();
+    engine::run();
     
 }
