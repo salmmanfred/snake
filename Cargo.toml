@@ -6,5 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-glium = "0.32.1"
+glium = "0.31.0"
 handy_macros = "1.0.0"
+glium_text_rusttype = {git= "https://github.com/not-fl3/glium_text_rusttype"}

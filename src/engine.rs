@@ -1,4 +1,7 @@
+use std::fs::File;
+
 use crate::Snake;
+extern crate glium_text_rusttype as glium_text;
 
 #[derive(Copy, Clone)]
 pub struct Vertex {
@@ -14,9 +17,12 @@ impl Vertex{
     }
 }
 
+use glium::backend::Facade;
 #[allow(unused_imports)]
-use glium::{glutin, Surface};
+use glium::{glutin, Surface,backend};
 use glium::index::PrimitiveType;
+
+use glium::Display;
 
 
 pub fn run() {
@@ -28,10 +34,21 @@ pub fn run() {
 
 
     let cb = glutin::ContextBuilder::new();
-    let display = glium::Display::new(wb, cb, &event_loop).unwrap();
+    let display = Display::new(wb, cb, &event_loop).unwrap();
     // building the vertex buffer, which contains all the vertices that we will draw
     
-        
+    let system = glium_text::TextSystem::new(&display);
+    display.get_context().get_context();
+
+    // Creating a `FontTexture`, which a regular `Texture` which contains the font.
+    // Note that loading the systems fonts is not covered by this library.
+    let font = glium_text::FontTexture::new(
+        &display,
+        File::open("./src/font.ttf").unwrap(),
+        70,
+        glium_text::FontTexture::ascii_character_list()
+    ).unwrap();
+    
 
         implement_vertex!(Vertex, position, color);
 
@@ -89,19 +106,34 @@ pub fn run() {
     let mut snake = Snake::new(true);
     let mut draw = move |x: u32| {
         snake.keypr(x);
+        let matrix =  [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0f32]
+        ];
+        let text = glium_text::TextDisplay::new(&system, &font, "Hello world!");
+
+        let text_width = text.get_width() * 1.;
+        
+
+        let (w, h) = display.get_framebuffer_dimensions();
+        let matrix_text:[[f32; 4]; 4] = [
+            [0.2 / text_width, 0.0, 0.0, 0.0,],
+            [0.0, 0.2 * (w as f32) / (h as f32) / text_width, 0.0, 0.0,],
+            [0.0, 0.0, 0.1, 0.0,],
+            [-0.1, -0.1, 0.0, 0.1f32,],
+        ];
+
+        
         // building the uniforms
         let uniforms = uniform! {
-            matrix: [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0f32]
-            ]
+            matrix: matrix.clone()
         };
 
         // drawing a frame
         let mut target = display.draw();
-        target.clear_color(0.0, 0., 0.5, 0.0);
+        target.clear_color(0.0, 0., 0.2, 0.0);
         let (pbuf,fbuf) = snake.render();
         let index_buffer = glium::IndexBuffer::new(&display, PrimitiveType::TrianglesList,
             &fbuf).unwrap();
@@ -117,7 +149,9 @@ pub fn run() {
 
             display.gl_window().window().set_title(title);
         }
+        
 
+        glium_text::draw(&text, &system, &mut target, matrix_text, (1.0, 1.0, 0.0, 1.0)).unwrap();
 
         target.draw(&vertex_buffer, &index_buffer, &program, &uniforms, &Default::default()).unwrap();
         

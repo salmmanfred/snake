@@ -108,11 +108,11 @@ impl Snake{
                 }
             }
 
-            if frame % 1000 == 0{
+            if frame % 100 == 0{
                 x+=ax;
                 y+=ay;
                 snakebod.push([x, y]);
-                s.change_title("Mashalla");
+               // s.change_title("Mashalla");
             }
                 
             // push the new bodypart
