@@ -8,35 +8,33 @@ pub struct Vertex {
     position: [f32; 2],
     color: [f32; 3],
 }
-impl Vertex{
-    pub fn new(position: [f32;2], color: [f32;3])->Self{
-        Self{
-            position,
-            color
-        }
+impl Vertex {
+    pub fn new(position: [f32; 2], color: [f32; 3]) -> Self {
+        Self { position, color }
     }
 }
 
 use glium::backend::Facade;
-#[allow(unused_imports)]
-use glium::{glutin, Surface,backend};
 use glium::index::PrimitiveType;
+#[allow(unused_imports)]
+use glium::{backend, glutin, Surface};
 
 use glium::Display;
 
-
 pub fn run() {
     let event_loop = glutin::event_loop::EventLoop::new();
-    let wb = glutin::window::WindowBuilder::new().with_title("Snake")
-    .with_resizable(false)
-    .with_inner_size(glutin::dpi::Size::Logical(glutin::dpi::LogicalSize{width: 500.,height: 500.}));
-    
-
+    let wb = glutin::window::WindowBuilder::new()
+        .with_title("Snake")
+        .with_resizable(false)
+        .with_inner_size(glutin::dpi::Size::Logical(glutin::dpi::LogicalSize {
+            width: 500.,
+            height: 500.,
+        }));
 
     let cb = glutin::ContextBuilder::new();
     let display = Display::new(wb, cb, &event_loop).unwrap();
     // building the vertex buffer, which contains all the vertices that we will draw
-    
+
     let system = glium_text::TextSystem::new(&display);
     display.get_context().get_context();
 
@@ -44,22 +42,22 @@ pub fn run() {
     // Note that loading the systems fonts is not covered by this library.
     let font = glium_text::FontTexture::new(
         &display,
-        File::open("./src/font.ttf").unwrap(),
-        70,
-        glium_text::FontTexture::ascii_character_list()
-    ).unwrap();
-    
+        File::open("./src/OpenSans-Medium.ttf").unwrap(),
+        55,
+        glium_text::FontTexture::ascii_character_list(),
+    )
+    .unwrap();
 
-        implement_vertex!(Vertex, position, color);
+    implement_vertex!(Vertex, position, color);
 
-      /*   let vertex_buffer =     glium::VertexBuffer::new(&display,
+    /*   let vertex_buffer =     glium::VertexBuffer::new(&display,
             &[
                 Vertex { position: [-0.5, -0.5], color: [0.0, 1.0, 0.0] },
                 Vertex { position: [ 0.0,  0.5], color: [0.0, 0.0, 1.0] },
                 Vertex { position: [ 0.5, -0.5], color: [1.0, 0.0, 0.0] },
             ]
         ).unwrap();
-    
+
 
     // building the index buffer
     let index_buffer = glium::IndexBuffer::new(&display, PrimitiveType::TrianglesList,
@@ -89,8 +87,9 @@ pub fn run() {
                 }
             "
         }
-  
-    ).unwrap();
+
+    )
+    .unwrap();
 
     // Here we draw the black background and triangle to the screen using the previously
     // initialised resources.
@@ -98,63 +97,75 @@ pub fn run() {
     // In this case we use a closure for simplicity, however keep in mind that most serious
     // applications should probably use a function that takes the resources as an argument.
 
-
-    
-
-
-
     let mut snake = Snake::new(true);
     let mut draw = move |x: u32| {
+        let mut target = display.draw();
+        target.clear_color(0.0, 0., 0.2, 0.0);
+
         snake.keypr(x);
-        let matrix =  [
+        let matrix = [
             [1.0, 0.0, 0.0, 0.0],
             [0.0, 1.0, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0f32]
+            [0.0, 0.0, 0.0, 1.0f32],
         ];
-        let text = glium_text::TextDisplay::new(&system, &font, "Hello world!");
 
-        let text_width = text.get_width() * 1.;
-        
+        for x in 0..snake.index_size() {
+            let text = snake.text_info_get(x);
+            let text = glium_text::TextDisplay::new(&system, &font, &text);
 
-        let (w, h) = display.get_framebuffer_dimensions();
-        let matrix_text:[[f32; 4]; 4] = [
+            let text_width = text.get_width();
+
+            let (w, h) = display.get_framebuffer_dimensions();
+            snake.update_text_info((w as f32, h as f32, text_width));
+            let matrix_text = snake.render_text(x);
+
+            glium_text::draw(
+                &text,
+                &system,
+                &mut target,
+                matrix_text,
+                (1.0, 1.0, 0.0, 1.0),
+            )
+            .unwrap();
+        }
+
+        /*let matrix_text:[[f32; 4]; 4] = [
             [0.2 / text_width, 0.0, 0.0, 0.0,],
             [0.0, 0.2 * (w as f32) / (h as f32) / text_width, 0.0, 0.0,],
             [0.0, 0.0, 0.1, 0.0,],
-            [-0.1, -0.1, 0.0, 0.1f32,],
-        ];
+            [0.01, 0.01, 0.0, 0.1f32,],
+        ];*/
 
-        
         // building the uniforms
         let uniforms = uniform! {
             matrix: matrix.clone()
         };
 
         // drawing a frame
-        let mut target = display.draw();
-        target.clear_color(0.0, 0., 0.2, 0.0);
-        let (pbuf,fbuf) = snake.render();
-        let index_buffer = glium::IndexBuffer::new(&display, PrimitiveType::TrianglesList,
-            &fbuf).unwrap();
+        let (pbuf, fbuf) = snake.render();
+        let index_buffer =
+            glium::IndexBuffer::new(&display, PrimitiveType::TrianglesList, &fbuf).unwrap();
 
-
-        let vertex_buffer =     glium::VertexBuffer::new(&display,
-            &pbuf
-        ).unwrap();
+        let vertex_buffer = glium::VertexBuffer::new(&display, &pbuf).unwrap();
         let (new_title, title) = snake.title();
 
-        if new_title{
-        println!("b{},{}",new_title,title);
+        if new_title {
+            println!("b{},{}", new_title, title);
 
             display.gl_window().window().set_title(title);
         }
-        
 
-        glium_text::draw(&text, &system, &mut target, matrix_text, (1.0, 1.0, 0.0, 1.0)).unwrap();
+        target
+            .draw(
+                &vertex_buffer,
+                &index_buffer,
+                &program,
+                &uniforms,
+                &Default::default(),
+            )
+            .unwrap();
 
-        target.draw(&vertex_buffer, &index_buffer, &program, &uniforms, &Default::default()).unwrap();
-        
         target.finish().unwrap();
     };
 
@@ -163,7 +174,6 @@ pub fn run() {
 
     // the main loop
     event_loop.run(move |event, _, control_flow| {
-       
         *control_flow = match event {
             glutin::event::Event::WindowEvent { event, .. } => match event {
                 // Break from the main loop when the window is closed.
@@ -172,35 +182,35 @@ pub fn run() {
                 glutin::event::WindowEvent::Resized(..) => {
                     draw(0);
                     glutin::event_loop::ControlFlow::Poll
-                },
-                glutin::event::WindowEvent::Focused(a) =>{
+                }
+                glutin::event::WindowEvent::Focused(a) => {
                     if a {
                         draw(0);
                     }
                     glutin::event_loop::ControlFlow::Poll
-
                 }
 
-          
                 _ => glutin::event_loop::ControlFlow::Poll,
             },
-            glutin::event::Event::DeviceEvent { device_id: _, event }=>{
+            glutin::event::Event::DeviceEvent {
+                device_id: _,
+                event,
+            } => {
                 match event {
-                    glutin::event::DeviceEvent::Key(a) =>{
+                    glutin::event::DeviceEvent::Key(a) => {
                         draw(a.scancode);
-                       //s println!("key: {}",a.scancode);
-                        
+                        //s println!("key: {}",a.scancode);
 
                         glutin::event_loop::ControlFlow::Poll
                     }
-                    
-                    _=>glutin::event_loop::ControlFlow::Poll
+
+                    _ => glutin::event_loop::ControlFlow::Poll,
                 }
             }
-            _ =>{ 
+            _ => {
                 draw(0);
                 glutin::event_loop::ControlFlow::Poll
-            },
+            }
         };
     });
 }
