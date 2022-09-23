@@ -227,6 +227,12 @@ impl Snake {
 
 }
 
+
+// TODO: add fixed intervals use time or something
+// TODO: Colour change on the text
+// TODO:comments
+// TODO: Clean up rendering pipeline and speeding up
+// TODO: finish game
 fn main() {
     engine::run();
 }
