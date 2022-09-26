@@ -110,25 +110,7 @@ pub fn run() {
             [0.0, 0.0, 0.0, 1.0f32],
         ];
 
-        for x in 0..snake.index_size() {
-            let text = snake.text_info_get(x);
-            let text = glium_text::TextDisplay::new(&system, &font, &text);
-
-            let text_width = text.get_width();
-
-            let (w, h) = display.get_framebuffer_dimensions();
-            snake.update_text_info((w as f32, h as f32, text_width));
-            let matrix_text = snake.render_text(x);
-
-            glium_text::draw(
-                &text,
-                &system,
-                &mut target,
-                matrix_text,
-                (1.0, 1.0, 0.0, 1.0),
-            )
-            .unwrap();
-        }
+        
 
         /*let matrix_text:[[f32; 4]; 4] = [
             [0.2 / text_width, 0.0, 0.0, 0.0,],
@@ -166,6 +148,27 @@ pub fn run() {
             )
             .unwrap();
 
+            for x in 0..snake.index_size() {
+                let text = snake.text_info_get(x);
+                let text = glium_text::TextDisplay::new(&system, &font, &text);
+    
+                let text_width = text.get_width();
+    
+                let (w, h) = display.get_framebuffer_dimensions();
+                snake.update_text_info((w as f32, h as f32, text_width));
+                let matrix_text = snake.render_text(x);
+    
+                glium_text::draw(
+                    &text,
+                    &system,
+                    &mut target,
+                    matrix_text,
+                    (1.0, 1.0, 0.0, 1.0),
+                )
+                .unwrap();
+            }
+
+        
         target.finish().unwrap();
     };
 
