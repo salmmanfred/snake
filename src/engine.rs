@@ -100,7 +100,7 @@ pub fn run() {
     let mut snake = Snake::new(true);
     let mut draw = move |x: u32| {
         let mut target = display.draw();
-        target.clear_color(0.0, 0., 0.2, 0.0);
+        target.clear_color(0.0, 0.3, 0.0, 0.0);
 
         snake.keypr(x);
         let matrix = [
@@ -163,7 +163,7 @@ pub fn run() {
                     &system,
                     &mut target,
                     matrix_text,
-                    (1.0, 1.0, 0.0, 1.0),
+                    (0.0, 0.0, 0.0, 1.0),
                 )
                 .unwrap();
             }
@@ -174,7 +174,7 @@ pub fn run() {
 
     // Draw the triangle to the screen.
     draw(0);
-
+    let mut run_game = true;
     // the main loop
     event_loop.run(move |event, _, control_flow| {
         *control_flow = match event {
@@ -187,9 +187,9 @@ pub fn run() {
                     glutin::event_loop::ControlFlow::Poll
                 }
                 glutin::event::WindowEvent::Focused(a) => {
-                    if a {
-                        draw(0);
-                    }
+                    
+                        run_game = a;
+                    
                     glutin::event_loop::ControlFlow::Poll
                 }
 
@@ -201,6 +201,14 @@ pub fn run() {
             } => {
                 match event {
                     glutin::event::DeviceEvent::Key(a) => {
+                        match a.scancode{
+                            1 =>{
+                                run_game = false;
+                                
+                            }
+                            _=>{}
+                        }
+
                         draw(a.scancode);
                         //s println!("key: {}",a.scancode);
 
@@ -211,7 +219,9 @@ pub fn run() {
                 }
             }
             _ => {
-                draw(0);
+                if run_game{
+                    draw(0);
+                }
                 glutin::event_loop::ControlFlow::Poll
             }
         };

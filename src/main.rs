@@ -8,6 +8,8 @@ use crate::engine::Vertex;
 
 const RED: [f32; 3] = [1., 0., 0.];
 const GREEN: [f32; 3] = [0., 1., 0.];
+const BLUE: [f32; 3] = [0., 0., 1.];
+
 
 enum Fne {
     None,
@@ -215,7 +217,7 @@ impl Snake {
             s.rectangle(applex, appley, spedx, spedy, RED);
 
             for x in snakebod.clone() {
-                s.rectangle(x[0], x[1], spedx, spedy, GREEN);
+                s.rectangle(x[0], x[1], spedx, spedy, BLUE);
             }
             frame += 1;
 
