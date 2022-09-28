@@ -2,7 +2,10 @@
 extern crate glium;
 
 mod engine;
+
+
 use handy_macros::s;
+use rand::{thread_rng, Rng};
 
 use crate::engine::Vertex;
 
@@ -142,7 +145,7 @@ impl Snake {
             self.data_long.push(val + 1)
         }
     }
-    pub fn change_title(&mut self, title: &str) {
+    pub fn _change_title(&mut self, title: &str) {
         self.titbool = true;
         self.title = s!(title);
         println!("a{},,{}", self.titbool, self.title);
@@ -165,12 +168,16 @@ impl Snake {
         let mut frame: u64 = 0;
 
         let mut snakebod: Vec<[f32; 2]> = vec![[x, y]];
-        let mut snek_len: usize = 5;
+        let mut snek_len: usize = 1;
 
-        let mut applex: f32 = 0.;
-        let mut appley: f32 = 0.;
+        let mut applex: f32 = 0.05;
+        let mut appley: f32 = 0.05;
+
+       
 
         let up = move |s: &mut Self| {
+            
+
             match s.key {
                 17 => {
                     // W
@@ -198,12 +205,46 @@ impl Snake {
                 _ => {}
             }
 
-            if frame % 100 == 0 {
+            if frame % 200 == 0 {
                 x += ax;
                 y += ay;
-                snakebod.push([x, y]);
                 // s.change_title("Mashalla");
+
+                for (i, ii) in snakebod.iter().enumerate(){
+
+                    println!("{},{},{}",i,&format!("{:.2},{:.2} ",ii[0].abs(),ii[1].abs()),&format!("{:.2},{:.2} ",x.abs(),y.abs()) );
+
+
+                    if &format!("{:.2},{:.2} ",ii[0],ii[1]) == &format!("{:.2},{:.2} ",x,y) 
+                    && i <= snakebod.len()-1{
+    
+                        panic!("GAME LOST");
+    
+    
+                    }
+    
+    
+                }
+                snakebod.push([x, y]);
+
             }
+
+            //collision
+            if &format!("{:.2},{:.2} ",applex,appley) == &format!("{:.2},{:.2} ",x,y){
+                snek_len+=1;
+                let xy = new_apple();
+                applex = xy[0];
+                appley = xy[1];
+                
+            }
+            //s.text(-10., 7., 1., &format!("x: {:.2},{:.2} ",applex,x.abs()));
+            s.text(-10., 7., 2., &format!("Score: {} ",snek_len));
+
+            
+
+
+
+
 
             // push the new bodypart
             // remove bodyparts that are old
@@ -211,16 +252,18 @@ impl Snake {
                 //  println!("len {:#?}",snakebod);
                 snakebod.remove(0);
             }
-            s.text(-10., 7., 1., "Sample text 123456890");
-            s.text(-5., -7., 3., "Sample text .2..");
+            //s.text(-10., 7., 1., "Sample text 123456890");
+            //s.text(-5., -7., 3., "Sample text .2..");
 
             s.rectangle(applex, appley, spedx, spedy, RED);
 
             for x in snakebod.clone() {
                 s.rectangle(x[0], x[1], spedx, spedy, BLUE);
             }
-            frame += 1;
+            
 
+            frame += 1;
+            
             // s.rectangle(-0.5, 0.5, 0.4, 0.5);
         };
 
@@ -237,4 +280,17 @@ impl Snake {
 // TODO: finish game
 fn main() {
     engine::run();
+}
+
+
+
+fn new_apple() -> [f32; 2] {
+    let mut rng = thread_rng();
+    let x = rng.gen_range(-1.0..1.0);
+    let x = x - (x % 0.05);
+
+    let y = rng.gen_range(-1.0..1.0);
+    let y = y - (y % 0.05);
+
+    [x, y]
 }

@@ -9,3 +9,4 @@ edition = "2021"
 glium = "0.31.0"
 handy_macros = "1.0.0"
 glium_text_rusttype = {git= "https://github.com/not-fl3/glium_text_rusttype"}
+rand = "0.8.5"
