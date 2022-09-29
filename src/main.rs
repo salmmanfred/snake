@@ -173,6 +173,17 @@ impl Snake {
         let mut applex: f32 = 0.05;
         let mut appley: f32 = 0.05;
 
+        let mut grid: Vec<[f32;2]> = Vec::new();
+        let mut is_dark_green = false;
+        for y in (-100..100).step_by(5){
+            // TODO: add the grid type system in google snake
+            for x in (-100..100).step_by(5){
+                grid.push([y as f32/100.,x as f32/100.]);
+            }
+        }
+
+
+
        
 
         let up = move |s: &mut Self| {
