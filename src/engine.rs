@@ -98,7 +98,7 @@ pub fn run() {
     // applications should probably use a function that takes the resources as an argument.
 
     let mut snake = Snake::new(true);
-    let mut draw = move |x: u32| {
+    let mut draw = move |x: u32, mouse:[f64;2]| {
         let mut target = display.draw();
         target.clear_color(0.0, 0.3, 0.0, 0.0);
 
@@ -109,6 +109,7 @@ pub fn run() {
             [0.0, 0.0, 1.0, 0.0],
             [0.0, 0.0, 0.0, 1.0f32],
         ];
+        snake.move_mouse(mouse);
 
         
 
@@ -173,7 +174,7 @@ pub fn run() {
     };
 
     // Draw the triangle to the screen.
-    draw(0);
+    draw(0,[0.,0.]);
     let mut run_game = true;
     // the main loop
     event_loop.run(move |event, _, control_flow| {
@@ -183,7 +184,7 @@ pub fn run() {
                 glutin::event::WindowEvent::CloseRequested => glutin::event_loop::ControlFlow::Exit,
                 // Redraw the triangle when the window is resized.
                 glutin::event::WindowEvent::Resized(..) => {
-                    draw(0);
+                    draw(0,[0.,0.]);
                     glutin::event_loop::ControlFlow::Poll
                 }
                 glutin::event::WindowEvent::Focused(a) => {
@@ -209,10 +210,18 @@ pub fn run() {
                             _=>{}
                         }
 
-                        draw(a.scancode);
+                        draw(a.scancode, [0.,0.]);
                         //s println!("key: {}",a.scancode);
 
                         glutin::event_loop::ControlFlow::Poll
+                    }
+                    glutin::event::DeviceEvent::MouseMotion { delta } =>{
+
+                        draw(0,[delta.0,delta.1]);
+
+
+                        glutin::event_loop::ControlFlow::Poll
+
                     }
 
                     _ => glutin::event_loop::ControlFlow::Poll,
@@ -220,7 +229,7 @@ pub fn run() {
             }
             _ => {
                 if run_game{
-                    draw(0);
+                    draw(0,[0.,0.]);
                 }
                 glutin::event_loop::ControlFlow::Poll
             }

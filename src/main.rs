@@ -11,7 +11,10 @@ use crate::engine::Vertex;
 
 const RED: [f32; 3] = [1., 0., 0.];
 const GREEN: [f32; 3] = [0., 1., 0.];
+const DARK_GREEN: [f32; 3] = [0., 0.6, 0.];
 const BLUE: [f32; 3] = [0., 0., 1.];
+const WHITE: [f32; 3] = [1., 1., 1.];
+
 
 
 enum Fne {
@@ -20,16 +23,27 @@ enum Fne {
 }
 
 struct Snake {
+    //graphics stuff
     data: Vec<Vertex>,
     data_long: Vec<u16>,
-
+    // text stuff
+    // posx, posy,size,text
     data_text: Vec<((f32, f32, f32), String)>,
     text_info: (f32, f32, f32),
-
+    // update loop
     updater: Fne,
+    // input stuff
     key: u32,
+    mouse: [f64;2],
+    //Title stuff
     titbool: bool,
     title: String,
+    //button stuff
+    //x,y sizex,sizey,sizetext in the f32;5
+    // colour in f32;3
+    buttons: Vec<([f32;5],[f32;3])>,
+    
+
 }
 impl Snake {
     pub fn new(d: bool) -> Self {
@@ -42,6 +56,8 @@ impl Snake {
             updater: Fne::None,
             data_text: Vec::new(),
             text_info: (0., 0., 0.),
+            buttons: Vec::new(),
+            mouse: [0.,0.],
         };
 
         match d {
@@ -99,6 +115,7 @@ impl Snake {
 
         let mut sn = Snake::new(false);
         sn.key = self.key.clone();
+        sn.mouse = self.mouse;
         match &mut self.updater {
             Fne::None => {
                 panic!("This cannot happen")
@@ -106,12 +123,13 @@ impl Snake {
             Fne::Fun(a) => a(&mut sn),
         }
         //(self.updater.un())(&mut sn);
-
+        
         self.data = sn.data;
         self.data_long = sn.data_long;
         self.title = sn.title;
         self.titbool = sn.titbool;
         self.data_text = sn.data_text;
+        
 
         let mut g = Vec::new();
         for x in self.data_long.iter() {
@@ -129,7 +147,9 @@ impl Snake {
         };
     }
 
-    fn rectangle(&mut self, x: f32, y: f32, sizex: f32, sizey: f32, color: [f32; 3]) {
+    fn rectangle(&mut self, pos: [f32;2], sizex: f32, sizey: f32, color: [f32; 3]) {
+        let (x,y) = (pos[0],pos[1]);
+
         let buff = vec![
             Vertex::new([x + sizex, y + sizey], color),
             Vertex::new([x + sizex, y], color),
@@ -155,12 +175,41 @@ impl Snake {
         //self.titbool = false;
         (titbool, &self.title)
     }
+    pub fn move_mouse(&mut self,delta: [f64; 2]){
+        self.mouse[0] += delta[0];
+        self.mouse[1] += delta[1];
+
+    }
+    pub fn register_button(&mut self, etc: [f32;5],col: [f32;3])->usize{
+        self.buttons.push((etc,col));
+        self.buttons.len()-1
+        
+    }
+    pub fn button(&mut self, pos: [f32;2],size:[f32;3],fine_tuning: [f32;2],col: [f32; 3],text: &str) -> usize{
+
+        // translate graphics coordinates to text coordinates
+        // seems like 1 point in textcord is the same as 0.1 in graphics cords
+        // so pos[0] * 10 should be it 
+        // leave fine_tuning to [10,10] for standard
+
+        let text_pos = [pos[0] * fine_tuning[0], pos[1] * fine_tuning[1]];
+        self.text(text_pos[0], text_pos[1], size[2], text);
+        self.rectangle(pos, size[0], size[1], col);
+        self.register_button([pos[0],pos[1],size[0],size[1],size[2]], col)
+
+
+    }
+
+    pub fn button_manager(&mut self){
+
+    }
+
 
     fn fun_update() -> Fne {
         let mut x = 0.5;
         let mut y = 0.5;
-        let spedx = 0.05;
-        let spedy = 0.05;
+        let spedx = 0.1;
+        let spedy = 0.1;
 
         let mut ax = spedx * 1.;
         let mut ay = 0.;
@@ -170,15 +219,22 @@ impl Snake {
         let mut snakebod: Vec<[f32; 2]> = vec![[x, y]];
         let mut snek_len: usize = 1;
 
-        let mut applex: f32 = 0.05;
-        let mut appley: f32 = 0.05;
+        let mut applex: f32 = 0. + spedx;
+        let mut appley: f32 = 0. + spedy;
 
-        let mut grid: Vec<[f32;2]> = Vec::new();
+        let mut grid: Vec<([f32;2],[f32;3],bool)> = Vec::new();
         let mut is_dark_green = false;
-        for y in (-100..100).step_by(5){
-            // TODO: add the grid type system in google snake
-            for x in (-100..100).step_by(5){
-                grid.push([y as f32/100.,x as f32/100.]);
+        
+        
+        for y in (-100..100).step_by((spedy * 100.) as usize){
+            
+            is_dark_green = !is_dark_green;
+
+            for x in (-100..100).step_by((spedy * 100.) as usize){
+                is_dark_green = !is_dark_green;
+                
+
+                grid.push(([x as f32/100.,y as f32/100.],DARK_GREEN,is_dark_green));
             }
         }
 
@@ -215,6 +271,10 @@ impl Snake {
                 }
                 _ => {}
             }
+            if frame == 30000{
+                panic!("fuck you continue coding")
+            }
+
 
             if frame % 200 == 0 {
                 x += ax;
@@ -223,7 +283,7 @@ impl Snake {
 
                 for (i, ii) in snakebod.iter().enumerate(){
 
-                    println!("{},{},{}",i,&format!("{:.2},{:.2} ",ii[0].abs(),ii[1].abs()),&format!("{:.2},{:.2} ",x.abs(),y.abs()) );
+                  //  println!("{},{},{}",i,&format!("{:.2},{:.2} ",ii[0].abs(),ii[1].abs()),&format!("{:.2},{:.2} ",x.abs(),y.abs()) );
 
 
                     if &format!("{:.2},{:.2} ",ii[0],ii[1]) == &format!("{:.2},{:.2} ",x,y) 
@@ -241,19 +301,18 @@ impl Snake {
             }
 
             //collision
-            if &format!("{:.2},{:.2} ",applex,appley) == &format!("{:.2},{:.2} ",x,y){
+            if format!("{:.2},{:.2} ",applex,appley) == format!("{:.2},{:.2} ",x,y){
                 snek_len+=1;
-                let xy = new_apple();
+                let xy = new_apple([spedx,spedy]);
                 applex = xy[0];
                 appley = xy[1];
                 
             }
-            //s.text(-10., 7., 1., &format!("x: {:.2},{:.2} ",applex,x.abs()));
+           // s.text(-10., 7., 1., &format!("x: {:.2},{:.2} ",applex,x.abs()));
             s.text(-10., 7., 2., &format!("Score: {} ",snek_len));
+            s.text(-5., -5., 2., &format!("Mouse: {}, {} ",s.mouse[0],s.mouse[1]));
 
             
-
-
 
 
 
@@ -266,10 +325,19 @@ impl Snake {
             //s.text(-10., 7., 1., "Sample text 123456890");
             //s.text(-5., -7., 3., "Sample text .2..");
 
-            s.rectangle(applex, appley, spedx, spedy, RED);
+            for (pos, colour,is_skip) in &grid{
+                if *is_skip{
+                    s.rectangle(*pos, spedx, spedy, *colour);
+                }
+                
+            }
+            s.button([-0.5,-0.5], [0.6,0.3,2.],[10.,10.],WHITE, "text test");
 
-            for x in snakebod.clone() {
-                s.rectangle(x[0], x[1], spedx, spedy, BLUE);
+            s.rectangle([applex, appley], spedx, spedy, RED);
+           
+
+            for pos in snakebod.clone() {
+                s.rectangle(pos, spedx, spedy, BLUE);
             }
             
 
@@ -285,6 +353,7 @@ impl Snake {
 
 
 // TODO: add fixed intervals use time or something
+// TODO: UI
 // TODO: Colour change on the text
 // TODO:comments
 // TODO: Clean up rendering pipeline and speeding up
@@ -295,13 +364,13 @@ fn main() {
 
 
 
-fn new_apple() -> [f32; 2] {
+fn new_apple(rng_rang: [f32;2]) -> [f32; 2] {
     let mut rng = thread_rng();
     let x = rng.gen_range(-1.0..1.0);
-    let x = x - (x % 0.05);
+    let x = x - (x % rng_rang[0]);
 
     let y = rng.gen_range(-1.0..1.0);
-    let y = y - (y % 0.05);
+    let y = y - (y % rng_rang[1]);
 
     [x, y]
 }
