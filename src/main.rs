@@ -206,13 +206,13 @@ impl Snake {
 
 
     fn fun_update() -> Fne {
-        let mut x = 0.5;
+        let mut x = 0.1;
         let mut y = 0.5;
         let spedx = 0.1;
         let spedy = 0.1;
 
-        let mut ax = spedx * 1.;
-        let mut ay = 0.;
+        let mut ax = spedx * 0.;
+        let mut ay = spedy * -1.;
 
         let mut frame: u64 = 0;
 
