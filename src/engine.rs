@@ -1,6 +1,6 @@
 use std::fs::File;
 
-use crate::Snake;
+use crate::{Snake, CursorInfo};
 extern crate glium_text_rusttype as glium_text;
 
 #[derive(Copy, Clone)]
@@ -98,17 +98,20 @@ pub fn run() {
     // applications should probably use a function that takes the resources as an argument.
 
     let mut snake = Snake::new(true);
-    let mut draw = move |x: u32, mouse:[f64;2]| {
+    let mut draw = move |x: u32, mouse:CursorInfo| {
         let mut target = display.draw();
         target.clear_color(0.0, 0.3, 0.0, 0.0);
 
         snake.keypr(x);
+
+        // TODO: Do these really have to bere (uniforms aswell)
         let matrix = [
             [1.0, 0.0, 0.0, 0.0],
             [0.0, 1.0, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
             [0.0, 0.0, 0.0, 1.0f32],
         ];
+        
         snake.move_mouse(mouse);
 
         
@@ -174,7 +177,7 @@ pub fn run() {
     };
 
     // Draw the triangle to the screen.
-    draw(0,[0.,0.]);
+    draw(0,CursorInfo::new());
     let mut run_game = true;
     // the main loop
     event_loop.run(move |event, _, control_flow| {
@@ -184,7 +187,7 @@ pub fn run() {
                 glutin::event::WindowEvent::CloseRequested => glutin::event_loop::ControlFlow::Exit,
                 // Redraw the triangle when the window is resized.
                 glutin::event::WindowEvent::Resized(..) => {
-                    draw(0,[0.,0.]);
+                    draw(0,CursorInfo::new());
                     glutin::event_loop::ControlFlow::Poll
                 }
                 glutin::event::WindowEvent::Focused(a) => {
@@ -192,6 +195,24 @@ pub fn run() {
                         run_game = a;
                     
                     glutin::event_loop::ControlFlow::Poll
+                }
+                glutin::event::WindowEvent::CursorEntered { device_id: _ } =>{
+                    draw(0,CursorInfo::window_left(true));
+                   
+                    glutin::event_loop::ControlFlow::Poll
+                }
+                glutin::event::WindowEvent::CursorLeft { device_id: _ } =>{
+                    draw(0,CursorInfo::window_left(false));
+                    
+                    
+                    glutin::event_loop::ControlFlow::Poll
+                }
+                glutin::event::WindowEvent::CursorMoved { device_id: _, position, modifiers: _ } =>{
+                    draw(0,CursorInfo::pos([position.x,position.y]));
+                    
+                    
+                    glutin::event_loop::ControlFlow::Poll
+                    
                 }
 
                 _ => glutin::event_loop::ControlFlow::Poll,
@@ -210,26 +231,19 @@ pub fn run() {
                             _=>{}
                         }
 
-                        draw(a.scancode, [0.,0.]);
+                        draw(a.scancode, CursorInfo::new());
                         //s println!("key: {}",a.scancode);
 
                         glutin::event_loop::ControlFlow::Poll
                     }
-                    glutin::event::DeviceEvent::MouseMotion { delta } =>{
-
-                        draw(0,[delta.0,delta.1]);
-
-
-                        glutin::event_loop::ControlFlow::Poll
-
-                    }
+                    
 
                     _ => glutin::event_loop::ControlFlow::Poll,
                 }
             }
             _ => {
                 if run_game{
-                    draw(0,[0.,0.]);
+                    draw(0,CursorInfo::new());
                 }
                 glutin::event_loop::ControlFlow::Poll
             }

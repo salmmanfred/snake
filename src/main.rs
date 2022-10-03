@@ -14,7 +14,34 @@ const GREEN: [f32; 3] = [0., 1., 0.];
 const DARK_GREEN: [f32; 3] = [0., 0.6, 0.];
 const BLUE: [f32; 3] = [0., 0., 1.];
 const WHITE: [f32; 3] = [1., 1., 1.];
+#[derive(Debug,Clone, Copy)]
+enum CursorChange{
+    New, // everything is new 
+    CopyPos, // only the window information is new,
+    CopyWindow, // Only the position is new
+    NoNewInfo,// the obj is empty and should be thrownaway
+}
 
+
+#[derive(Debug,Clone, Copy)]
+struct CursorInfo{
+    pos: [f64;2],
+    in_window: bool,
+    info: CursorChange
+
+}
+impl CursorInfo{
+    pub fn new()->Self{
+        Self { pos: [0.,0.],in_window: false, info:CursorChange::NoNewInfo }
+    }
+    pub fn pos(pos:[f64;2])->Self{
+        Self { pos, in_window: false,info: CursorChange::CopyWindow }
+    }
+    pub fn window_left(info: bool)->Self{
+        Self { pos: [0.,0.], in_window: info,info: CursorChange::CopyPos }
+
+    }
+}
 
 
 enum Fne {
@@ -34,7 +61,7 @@ struct Snake {
     updater: Fne,
     // input stuff
     key: u32,
-    mouse: [f64;2],
+    mouse: CursorInfo,
     //Title stuff
     titbool: bool,
     title: String,
@@ -57,7 +84,8 @@ impl Snake {
             data_text: Vec::new(),
             text_info: (0., 0., 0.),
             buttons: Vec::new(),
-            mouse: [0.,0.],
+            mouse: CursorInfo::new(),
+            
         };
 
         match d {
@@ -175,10 +203,46 @@ impl Snake {
         //self.titbool = false;
         (titbool, &self.title)
     }
-    pub fn move_mouse(&mut self,delta: [f64; 2]){
-        self.mouse[0] += delta[0];
-        self.mouse[1] += delta[1];
+    pub fn move_mouse(&mut self,info: CursorInfo){
+       
+        
 
+       // println!("sent here");
+        match info.info {
+             CursorChange::CopyPos =>{
+                
+                self.mouse.in_window = info.in_window;
+               
+        
+                
+
+            }
+            CursorChange::CopyWindow =>{
+              
+                self.mouse.pos = info.pos;
+      
+                
+
+            }
+            CursorChange::New =>{
+                self.mouse = info;
+   
+
+            }
+            
+            CursorChange::NoNewInfo =>{
+                
+
+                drop(info);
+        //println!("sent here4");
+
+            }
+
+
+            _=>{
+                panic!("mouse info is empty")
+            }
+        }
     }
     pub fn register_button(&mut self, etc: [f32;5],col: [f32;3])->usize{
         self.buttons.push((etc,col));
@@ -310,7 +374,7 @@ impl Snake {
             }
            // s.text(-10., 7., 1., &format!("x: {:.2},{:.2} ",applex,x.abs()));
             s.text(-10., 7., 2., &format!("Score: {} ",snek_len));
-            s.text(-5., -5., 2., &format!("Mouse: {}, {} ",s.mouse[0],s.mouse[1]));
+            s.text(-35., -5., 0.2, &format!("Mouse: {:#?} ",s.mouse));
 
             
 
