@@ -17,8 +17,9 @@ const WHITE: [f32; 3] = [1., 1., 1.];
 #[derive(Debug,Clone, Copy)]
 enum CursorChange{
     New, // everything is new 
-    CopyPos, // only the window information is new,
-    CopyWindow, // Only the position is new
+    WindowChange, // only the window information is new,
+    PosChange, // Only the position is new
+    ButtonChange, // when the button has been changed
     NoNewInfo,// the obj is empty and should be thrownaway
 }
 
@@ -27,18 +28,22 @@ enum CursorChange{
 struct CursorInfo{
     pos: [f64;2],
     in_window: bool,
+    button_press: bool,
     info: CursorChange
 
 }
 impl CursorInfo{
     pub fn new()->Self{
-        Self { pos: [0.,0.],in_window: false, info:CursorChange::NoNewInfo }
+        Self { pos: [0.,0.],in_window: false, button_press: false, info:CursorChange::NoNewInfo }
     }
     pub fn pos(pos:[f64;2])->Self{
-        Self { pos, in_window: false,info: CursorChange::CopyWindow }
+        Self { pos, in_window: false, button_press: false, info: CursorChange::PosChange }
     }
     pub fn window_left(info: bool)->Self{
-        Self { pos: [0.,0.], in_window: info,info: CursorChange::CopyPos }
+        Self { pos: [0.,0.], in_window: info, button_press: false,  info: CursorChange::WindowChange }
+    }
+    pub fn button_press(info: bool)->Self{
+        Self { pos: [0.,0.], in_window: false, button_press: info,  info: CursorChange::ButtonChange }
 
     }
 }
@@ -209,29 +214,28 @@ impl Snake {
 
        // println!("sent here");
         match info.info {
-             CursorChange::CopyPos =>{
+             CursorChange::WindowChange =>{
                 
                 self.mouse.in_window = info.in_window;
-               
-        
-                
 
             }
-            CursorChange::CopyWindow =>{
+            CursorChange::PosChange =>{
               
                 self.mouse.pos = info.pos;
       
-                
-
             }
             CursorChange::New =>{
                 self.mouse = info;
    
 
             }
+            CursorChange::ButtonChange =>{
+                self.mouse.button_press = info.button_press;
+                
+            }
             
             CursorChange::NoNewInfo =>{
-                
+                self.mouse.button_press = false;
 
                 drop(info);
         //println!("sent here4");
@@ -265,7 +269,42 @@ impl Snake {
     }
 
     pub fn button_manager(&mut self){
+        let mousepos = translate_mouse_cords(self.mouse.pos);
+        let mousex = mousepos[0];
+            let mousey = mousepos[1];
+        self.rectangle([mousex as f32, mousey as f32], 0.1, 0.1, WHITE);
+        
+        
+        if self.mouse.button_press && self.mouse.in_window{
+            
 
+            
+            println!("mousebtn prs");
+            for (i,o) in self.buttons.iter().enumerate(){
+                let o = *o;
+                let x = o.0;
+                let bx = x[0] as f64;
+                let by = x[1] as f64;
+                let bw = x[2] as f64;
+                let bh = x[3] as f64;
+
+
+                if 
+                    bx < mousex + 0.1 &&
+                    bx + bw > mousex &&
+                    by < mousey + 0.1 &&
+                    bh + by > mousey
+                   {
+
+                    panic!("press btn");
+
+                   }
+            }
+
+
+        }else{
+            return ()
+        }
     }
 
 
@@ -336,7 +375,7 @@ impl Snake {
                 _ => {}
             }
             if frame == 30000{
-                panic!("fuck you continue coding")
+             //   panic!("fuck you continue coding")
             }
 
 
@@ -366,15 +405,15 @@ impl Snake {
 
             //collision
             if format!("{:.2},{:.2} ",applex,appley) == format!("{:.2},{:.2} ",x,y){
-                snek_len+=1;
-                let xy = new_apple([spedx,spedy]);
+                //snek_len+=1;
+            /*     let xy = new_apple([spedx,spedy]);
                 applex = xy[0];
-                appley = xy[1];
+                appley = xy[1];*/
                 
             }
            // s.text(-10., 7., 1., &format!("x: {:.2},{:.2} ",applex,x.abs()));
             s.text(-10., 7., 2., &format!("Score: {} ",snek_len));
-            s.text(-35., -5., 0.2, &format!("Mouse: {:#?} ",s.mouse));
+            s.text(-15., -5., 0.2, &format!("Mouse: {:#?} ",s.mouse));
 
             
 
@@ -407,10 +446,12 @@ impl Snake {
 
             frame += 1;
             
-            // s.rectangle(-0.5, 0.5, 0.4, 0.5);
+             s.rectangle([0.,0.5], 0.1, 0.1, BLUE);
+             s.button_manager();
         };
 
         Fne::Fun(Box::new(up))
+
     }
 
 }
@@ -437,4 +478,44 @@ fn new_apple(rng_rang: [f32;2]) -> [f32; 2] {
     let y = y - (y % rng_rang[1]);
 
     [x, y]
+}
+// TODO: Only works in the upper right corner rn 
+// TODO: have each corner its own translation.
+fn translate_mouse_cords(pos: [f64;2])->[f64;2]{
+    let mut pos = pos;
+    let mut new_pos = [0.,0.];
+    
+    if pos[0] >= 250.{
+        let it1 = (pos[0] / 25.) -10.;
+        let posx = it1/ 10.;
+      //  println!("posx: {posx} {} +",it1+10.,);
+        new_pos[0] = posx;
+
+    }else{
+        let it1 = pos[0] / -25.;
+        let posx = it1 / 10.;
+     //   println!("posx: {posx}   -");
+        new_pos[0] = posx;
+    }
+
+    pos[1] = 500.- pos[1];
+    if pos[1] <= 250.{
+        let it1 = (pos[1] / -25.); //+ 10.;
+        let posy = it1/ 10.;
+      //  println!("posx: {posy} {} {} +",it1,pos[1]);
+        new_pos[1] = posy + 0.3;
+
+    }else{
+        let it1 = (pos[1] / 25.) - 10. ;
+        let posy = it1 / 10.;
+       // println!("posx: {posy} {} {} -",it1,it1*-25.);
+
+
+
+        new_pos[1] = posy - 0.1;
+        
+    }
+    println!("translated pos: {:?}",new_pos);
+
+    new_pos
 }

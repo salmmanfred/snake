@@ -30,11 +30,13 @@ pub fn run() {
             width: 500.,
             height: 500.,
         }));
+    
+    
 
     let cb = glutin::ContextBuilder::new();
     let display = Display::new(wb, cb, &event_loop).unwrap();
     // building the vertex buffer, which contains all the vertices that we will draw
-
+    
     let system = glium_text::TextSystem::new(&display);
     display.get_context().get_context();
 
@@ -208,6 +210,8 @@ pub fn run() {
                     glutin::event_loop::ControlFlow::Poll
                 }
                 glutin::event::WindowEvent::CursorMoved { device_id: _, position, modifiers: _ } =>{
+
+                    let position = position.to_logical(1.);
                     draw(0,CursorInfo::pos([position.x,position.y]));
                     
                     
@@ -235,6 +239,13 @@ pub fn run() {
                         //s println!("key: {}",a.scancode);
 
                         glutin::event_loop::ControlFlow::Poll
+                    }
+                    glutin::event::DeviceEvent::Button { button, state:_ } =>{
+                        if button == 1{
+                            draw(0,CursorInfo::button_press(true))
+                        }
+                        glutin::event_loop::ControlFlow::Poll
+
                     }
                     
 
