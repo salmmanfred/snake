@@ -102,35 +102,33 @@ pub fn run() {
     // applications should probably use a function that takes the resources as an argument.
 
     let mut snake = Snake::new(true);
-    let mut draw = move |x: u32, mouse:CursorInfo| {
-        let mut target = display.draw();
-        target.clear_color(0.0, 0.3, 0.0, 0.0);
 
-        snake.keypr(x);
-
-        // TODO: Do these really have to bere (uniforms aswell)
-        let matrix = [
+    let matrix = [
             [1.0, 0.0, 0.0, 0.0],
             [0.0, 1.0, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
             [0.0, 0.0, 0.0, 1.0f32],
         ];
         
-        snake.move_mouse(mouse);
 
         
 
-        /*let matrix_text:[[f32; 4]; 4] = [
-            [0.2 / text_width, 0.0, 0.0, 0.0,],
-            [0.0, 0.2 * (w as f32) / (h as f32) / text_width, 0.0, 0.0,],
-            [0.0, 0.0, 0.1, 0.0,],
-            [0.01, 0.01, 0.0, 0.1f32,],
-        ];*/
+      
 
         // building the uniforms
         let uniforms = uniform! {
             matrix: matrix.clone()
         };
+
+    let mut draw = move |x: u32, mouse:CursorInfo| {
+        let mut target = display.draw();
+        target.clear_color(0.0, 0.3, 0.0, 0.0);
+
+        snake.keypr(x);
+        snake.move_mouse(mouse);
+
+        
+        
 
         // drawing a frame
         let (pbuf, fbuf) = snake.render();
@@ -141,8 +139,6 @@ pub fn run() {
         let (new_title, title) = snake.title();
 
         if new_title {
-            println!("b{},{}", new_title, title);
-
             display.gl_window().window().set_title(title);
         }
 
@@ -155,6 +151,8 @@ pub fn run() {
                 &Default::default(),
             )
             .unwrap();
+            let (w, h) = display.get_framebuffer_dimensions();
+
 
             for x in 0..snake.index_size() {
                 let text = snake.text_info_get(x);
@@ -162,7 +160,6 @@ pub fn run() {
     
                 let text_width = text.get_width();
     
-                let (w, h) = display.get_framebuffer_dimensions();
                 snake.update_text_info((w as f32, h as f32, text_width));
                 let matrix_text = snake.render_text(x);
     

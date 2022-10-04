@@ -2,7 +2,8 @@
 extern crate glium;
 
 mod engine;
-
+mod game;
+use crate::game::GameLogic;
 
 use handy_macros::s;
 use rand::{thread_rng, Rng};
@@ -25,7 +26,7 @@ enum CursorChange{
 
 
 #[derive(Debug,Clone, Copy)]
-struct CursorInfo{
+pub struct CursorInfo{
     pos: [f64;2],
     in_window: bool,
     button_press: bool,
@@ -49,12 +50,12 @@ impl CursorInfo{
 }
 
 
-enum Fne {
+pub enum Fne {
     None,
     Fun(Box<dyn (FnMut(&mut Snake))>),
 }
 
-struct Snake {
+pub struct Snake {
     //graphics stuff
     data: Vec<Vertex>,
     data_long: Vec<u16>,
@@ -64,6 +65,12 @@ struct Snake {
     text_info: (f32, f32, f32),
     // update loop
     updater: Fne,
+    menue: Fne,
+    end_game: Fne,
+    //current interface
+    interface: usize,
+    //score
+    score: usize,
     // input stuff
     key: u32,
     mouse: CursorInfo,
@@ -86,6 +93,10 @@ impl Snake {
             data_long: Vec::new(),
             key: 0,
             updater: Fne::None,
+            menue: Fne::None,
+            end_game: Fne::None,
+            interface: 0,
+            score: 0,
             data_text: Vec::new(),
             text_info: (0., 0., 0.),
             buttons: Vec::new(),
@@ -95,7 +106,11 @@ impl Snake {
 
         match d {
             true => {
-                snake.updater = Self::fun_update();
+                let (m,l, e) = Self::fun_update();
+                snake.menue = m;
+                snake.updater = l;
+                snake.end_game = e;
+
 
                 return snake;
             }
@@ -149,19 +164,63 @@ impl Snake {
         let mut sn = Snake::new(false);
         sn.key = self.key.clone();
         sn.mouse = self.mouse;
-        match &mut self.updater {
-            Fne::None => {
-                panic!("This cannot happen")
+        sn.interface = self.interface;
+        sn.score = self.score;
+        match self.interface {
+            0=>{// menue
+                match &mut self.menue {
+                    Fne::None => {
+                        panic!("This cannot happen")
+                    }
+                    Fne::Fun(a) => a(&mut sn),
+                }
             }
-            Fne::Fun(a) => a(&mut sn),
+
+            1=>{ // actuall game
+                match &mut self.updater {
+                    Fne::None => {
+                        panic!("This cannot happen")
+                    }
+                    Fne::Fun(a) => a(&mut sn),
+                }
+            }
+            2=>{ // end screen
+                match &mut self.end_game {
+                    Fne::None => {
+                        panic!("This cannot happen")
+                    }
+                    Fne::Fun(a) =>{ 
+                        let (_,b,_) = Self::fun_update();
+                        self.updater = b;
+                        a(&mut sn)
+                    },
+                }
+            }
+            3=>{ // Pause
+                match &mut self.end_game {
+                    Fne::None => {
+                        panic!("This cannot happen")
+                    }
+                    Fne::Fun(a) =>{ 
+                       
+                        a(&mut sn)
+                    },
+                }
+            }
+            _=>{
+                panic!("invalid interface")
+            }
         }
+        
         //(self.updater.un())(&mut sn);
         
         self.data = sn.data;
+        self.interface = sn.interface;
         self.data_long = sn.data_long;
         self.title = sn.title;
         self.titbool = sn.titbool;
         self.data_text = sn.data_text;
+        self.score = sn.score;
         
 
         let mut g = Vec::new();
@@ -194,14 +253,14 @@ impl Snake {
         self.data.extend(buff.iter());
         for _ in 0..6 {
             let val = self.latest_long();
-
+            
             self.data_long.push(val + 1)
         }
     }
     pub fn _change_title(&mut self, title: &str) {
         self.titbool = true;
         self.title = s!(title);
-        println!("a{},,{}", self.titbool, self.title);
+        //println!("a{},,{}", self.titbool, self.title);
     }
     pub fn title(&mut self) -> (bool, &str) {
         let titbool = self.titbool;
@@ -266,7 +325,10 @@ impl Snake {
     }
 
     pub fn button_manager(&mut self)->usize{
-        
+        /*let mousepos = translate_mouse_cords(self.mouse.pos);
+            let mousex = mousepos[0];
+            let mousey = mousepos[1];
+        self.rectangle([mousex as f32,mousey as f32], 0.1, 0.1, WHITE);*/
        
         
         if self.mouse.button_press && self.mouse.in_window{
@@ -275,7 +337,7 @@ impl Snake {
             let mousey = mousepos[1];
 
             
-            println!("mousebtn prs");
+           
             for (i,o) in self.buttons.iter().enumerate(){
                 let o = *o;
                 let x = o.0;
@@ -286,9 +348,9 @@ impl Snake {
 
 
                 if 
-                    bx < mousex + 0.01 &&
+                    bx < mousex + 0.05 &&
                     bx + bw > mousex &&
-                    by < mousey + 0.01 &&
+                    by < mousey + 0.05 &&
                     bh + by > mousey
                    {
 
@@ -304,154 +366,8 @@ impl Snake {
     }
 
 
-    fn fun_update() -> Fne {
-        let mut x = 0.1;
-        let mut y = 0.5;
-        let spedx = 0.1;
-        let spedy = 0.1;
-
-        let mut ax = spedx * 0.;
-        let mut ay = spedy * -1.;
-
-        let mut frame: u64 = 0;
-
-        let mut snakebod: Vec<[f32; 2]> = vec![[x, y]];
-        let mut snek_len: usize = 1;
-
-        let mut applex: f32 = 0. + spedx;
-        let mut appley: f32 = 0. + spedy;
-
-        let mut grid: Vec<([f32;2],[f32;3],bool)> = Vec::new();
-        let mut is_dark_green = false;
-        
-        
-        for y in (-100..100).step_by((spedy * 100.) as usize){
-            
-            is_dark_green = !is_dark_green;
-
-            for x in (-100..100).step_by((spedy * 100.) as usize){
-                is_dark_green = !is_dark_green;
-                
-
-                grid.push(([x as f32/100.,y as f32/100.],DARK_GREEN,is_dark_green));
-            }
-        }
-
-
-
-       
-
-        let up = move |s: &mut Self| {
-            
-
-            match s.key {
-                17 => {
-                    // W
-                    ay = spedy;
-                    ax = 0.;
-                }
-                30 => {
-                    // A
-                    ay = 0.;
-                    ax = spedx * -1.;
-                }
-                31 => {
-                    // S
-                    ay = spedy * -1.;
-                    ax = 0.;
-                }
-                32 => {
-                    // D
-                    ay = 0.;
-                    ax = spedx;
-                }
-                1 => {
-                    println!("{},{} . {},{}", x, y, ax, ay);
-                }
-                _ => {}
-            }
-            if frame == 30000{
-             //   panic!("fuck you continue coding")
-            }
-
-
-            if frame % 200 == 0 {
-                x += ax;
-                y += ay;
-                // s.change_title("Mashalla");
-
-                for (i, ii) in snakebod.iter().enumerate(){
-
-                  //  println!("{},{},{}",i,&format!("{:.2},{:.2} ",ii[0].abs(),ii[1].abs()),&format!("{:.2},{:.2} ",x.abs(),y.abs()) );
-
-
-                    if &format!("{:.2},{:.2} ",ii[0],ii[1]) == &format!("{:.2},{:.2} ",x,y) 
-                    && i <= snakebod.len()-1{
-    
-                        panic!("GAME LOST");
-    
-    
-                    }
-    
-    
-                }
-                snakebod.push([x, y]);
-
-            }
-
-            //collision
-            if format!("{:.2},{:.2} ",applex,appley) == format!("{:.2},{:.2} ",x,y){
-                //snek_len+=1;
-            /*     let xy = new_apple([spedx,spedy]);
-                applex = xy[0];
-                appley = xy[1];*/
-                
-            }
-           // s.text(-10., 7., 1., &format!("x: {:.2},{:.2} ",applex,x.abs()));
-            s.text(-10., 7., 2., &format!("Score: {} ",snek_len));
-            s.text(-15., -5., 0.2, &format!("Mouse: {:#?} ",s.mouse));
-
-            
-
-
-
-            // push the new bodypart
-            // remove bodyparts that are old
-            if snakebod.len() > snek_len {
-                //  println!("len {:#?}",snakebod);
-                snakebod.remove(0);
-            }
-            //s.text(-10., 7., 1., "Sample text 123456890");
-            //s.text(-5., -7., 3., "Sample text .2..");
-
-            for (pos, colour,is_skip) in &grid{
-                if *is_skip{
-                    s.rectangle(*pos, spedx, spedy, *colour);
-                }
-                
-            }
-            let btn_id = s.button([-0.5,-0.5], [0.6,0.3,2.],[10.,10.],WHITE, "text test");
-
-            s.rectangle([applex, appley], spedx, spedy, RED);
-           
-
-            for pos in snakebod.clone() {
-                s.rectangle(pos, spedx, spedy, BLUE);
-            }
-            
-
-            frame += 1;
-            
-             s.rectangle([0.,0.5], 0.1, 0.1, BLUE);
-            let btn_prs = s.button_manager();
-            if s.button_manager() == btn_id{
-                panic!(" le butt pressed");
-            }
-
-
-        };
-
-        Fne::Fun(Box::new(up))
+    fn fun_update() -> (Fne,Fne,Fne) {
+        (Self::menue(),Self::game_loop(),Self::end_screen())
 
     }
 
@@ -459,66 +375,26 @@ impl Snake {
 
 
 // TODO: add fixed intervals use time or something
-// TODO: UI
+// TODO: UI (Done)
+// TODO: Make a menue (Done)
 // TODO: Colour change on the text
-// TODO:comments
-// TODO: Clean up rendering pipeline and speeding up
-// TODO: finish game
+// TODO: Comments
+// TODO: Clean up rendering pipeline and speeding up (WIP)
+// TODO: Finish game
 fn main() {
     engine::run();
 }
 
 
 
-fn new_apple(rng_rang: [f32;2]) -> [f32; 2] {
-    let mut rng = thread_rng();
-    let x = rng.gen_range(-1.0..1.0);
-    let x = x - (x % rng_rang[0]);
-
-    let y = rng.gen_range(-1.0..1.0);
-    let y = y - (y % rng_rang[1]);
-
-    [x, y]
-}
 
 
 
+//make the mouse cords get into graphics cords
 fn translate_mouse_cords(pos: [f64;2])->[f64;2]{
-    let mut pos = pos;
-    let mut new_pos = [0.,0.];
     
-
-        let it1 = (pos[0] / 25.);
-        let mut posx = it1/ 10.;
-        posx -= 1.;
-        println!("posx: {posx} {} +",it1+10.,);
-        new_pos[0] = posx;
-
+        // you might be asking how i got these numbers and if I got them using some sort of 
+        //mathematical formula but no this is by trial and error
+        [((pos[0] / 250.) -1.),((pos[1] / -250.) + 0.9)]
     
-
-    
-   
-
-    if pos[1] >= 250.{
-        let it1 = (pos[1] / -25.);
-        let mut posy = it1/ 10.;
-        posy +=0.6;
-      //  println!("posx: {posy} {} {} +",it1,pos[1]);
-        new_pos[1] = posy + 0.3;
-
-    }else{
-        let it1 = (pos[1] / -25.);// - 10. ;
-        let mut posy = it1 / 10.;
-        posy += 1.;
-
-     //   println!("posx: {posy} {} {} -",it1,it1*-25.);
-
-
-
-        new_pos[1] = posy - 0.1;
-        
-    }
-   // println!("translated pos: {:?}",new_pos);
-
-    new_pos
 }
