@@ -1,7 +1,7 @@
 use handy_macros::s;
 use rand::thread_rng;
 use rand::Rng;
-
+use std::time::Instant;
 use crate::Fne;
 use crate::Snake;
 use crate::BLUE;
@@ -93,7 +93,7 @@ fn game_loop() -> Fne {
             ));
         }
     }
-
+    let now = Instant::now();
     let up = move |s: &mut Snake| {
         match s.key {
             17 => {
@@ -124,7 +124,7 @@ fn game_loop() -> Fne {
         }
        
 
-        if frame % 200 == 0 {
+        if frame % 20 == 0 {
             x += ax;
             y += ay;
             // s.change_title("Mashalla");
@@ -140,6 +140,9 @@ fn game_loop() -> Fne {
                     s.interface = 2;
 
                     s.lost = true;
+                    
+                    let elapsed_time = now.elapsed();
+                    println!("time: {:?}, frames {frame}",elapsed_time)
                 }
             }
             if (((applex*100.).round() / 100.)+0.0001,((appley*100.).round() / 100.)+0.0001) == 

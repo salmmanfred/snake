@@ -2,6 +2,7 @@ use std::fs::File;
 
 use crate::{CursorInfo, Snake};
 extern crate glium_text_rusttype as glium_text;
+use std::time::Instant;
 
 #[derive(Copy, Clone)]
 pub struct Vertex {
@@ -171,6 +172,7 @@ pub fn run() {
     let mut run_game = true;
     // the main loop
     event_loop.run(move |event, _, control_flow| {
+        let start_time = Instant::now();
         *control_flow = match event {
             glutin::event::Event::WindowEvent { event, .. } => match event {
                 // Break from the main loop when the window is closed.
@@ -240,7 +242,8 @@ pub fn run() {
                 if run_game {
                     draw(0, CursorInfo::new());
                 }
-                glutin::event_loop::ControlFlow::Poll
+                let wait = start_time + std::time::Duration::from_millis(17);
+                glutin::event_loop::ControlFlow::WaitUntil(wait)
             }
         };
     });
