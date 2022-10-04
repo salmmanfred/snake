@@ -247,7 +247,7 @@ impl Snake {
     }
     pub fn register_button(&mut self, etc: [f32;5],col: [f32;3])->usize{
         self.buttons.push((etc,col));
-        self.buttons.len()-1
+        self.buttons.len()
         
     }
     pub fn button(&mut self, pos: [f32;2],size:[f32;3],fine_tuning: [f32;2],col: [f32; 3],text: &str) -> usize{
@@ -265,15 +265,14 @@ impl Snake {
 
     }
 
-    pub fn button_manager(&mut self){
-        let mousepos = translate_mouse_cords(self.mouse.pos);
-        let mousex = mousepos[0];
-            let mousey = mousepos[1];
-        self.rectangle([mousex as f32, mousey as f32], 0.1, 0.1, WHITE);
+    pub fn button_manager(&mut self)->usize{
         
+       
         
         if self.mouse.button_press && self.mouse.in_window{
-            
+            let mousepos = translate_mouse_cords(self.mouse.pos);
+            let mousex = mousepos[0];
+            let mousey = mousepos[1];
 
             
             println!("mousebtn prs");
@@ -287,20 +286,20 @@ impl Snake {
 
 
                 if 
-                    bx < mousex + 0.1 &&
+                    bx < mousex + 0.01 &&
                     bx + bw > mousex &&
-                    by < mousey + 0.1 &&
+                    by < mousey + 0.01 &&
                     bh + by > mousey
                    {
 
-                    panic!("press btn");
-
+                    return i+1;
                    }
             }
+            return 0
 
 
         }else{
-            return ()
+            return 0
         }
     }
 
@@ -431,7 +430,7 @@ impl Snake {
                 }
                 
             }
-            s.button([-0.5,-0.5], [0.6,0.3,2.],[10.,10.],WHITE, "text test");
+            let btn_id = s.button([-0.5,-0.5], [0.6,0.3,2.],[10.,10.],WHITE, "text test");
 
             s.rectangle([applex, appley], spedx, spedy, RED);
            
@@ -444,7 +443,12 @@ impl Snake {
             frame += 1;
             
              s.rectangle([0.,0.5], 0.1, 0.1, BLUE);
-             s.button_manager();
+            let btn_prs = s.button_manager();
+            if s.button_manager() == btn_id{
+                panic!(" le butt pressed");
+            }
+
+
         };
 
         Fne::Fun(Box::new(up))
@@ -476,37 +480,30 @@ fn new_apple(rng_rang: [f32;2]) -> [f32; 2] {
 
     [x, y]
 }
-// TODO: Only works in the upper right corner rn 
-// TODO: have each corner its own translation.
+
+
+
 fn translate_mouse_cords(pos: [f64;2])->[f64;2]{
     let mut pos = pos;
     let mut new_pos = [0.,0.];
     
-    if pos[0] >= 250.{
-        let it1 = (pos[0] / 25.) -10.;
-        let posx = it1/ 10.;
-      //  println!("posx: {posx} {} +",it1+10.,);
-        new_pos[0] = posx;
 
-    }else{
-        let it1 = pos[0] / -25.;
-        let posx = it1 / 10.;
-     //   println!("posx: {posx}   -");
+        let it1 = (pos[0] / 25.);
+        let mut posx = it1/ 10.;
+        posx -= 1.;
+        println!("posx: {posx} {} +",it1+10.,);
         new_pos[0] = posx;
-    }
 
     
-   // pos[1] = 500.- pos[1];
-    if pos[1] <= 250.{
-   // pos[1] = 500.- pos[1];
 
-    }
+    
+   
 
     if pos[1] >= 250.{
         let it1 = (pos[1] / -25.);
         let mut posy = it1/ 10.;
         posy +=0.6;
-        println!("posx: {posy} {} {} +",it1,pos[1]);
+      //  println!("posx: {posy} {} {} +",it1,pos[1]);
         new_pos[1] = posy + 0.3;
 
     }else{
@@ -514,7 +511,7 @@ fn translate_mouse_cords(pos: [f64;2])->[f64;2]{
         let mut posy = it1 / 10.;
         posy += 1.;
 
-        println!("posx: {posy} {} {} -",it1,it1*-25.);
+     //   println!("posx: {posy} {} {} -",it1,it1*-25.);
 
 
 
