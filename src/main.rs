@@ -10,13 +10,13 @@ use handy_macros::s;
 use crate::engine::Vertex;
 
 const RED: [f32; 3] = [1., 0., 0.];
+#[allow(dead_code)]
 const GREEN: [f32; 3] = [0., 1., 0.];
 const DARK_GREEN: [f32; 3] = [0., 0.6, 0.];
 const BLUE: [f32; 3] = [0., 0., 1.];
 const WHITE: [f32; 3] = [1., 1., 1.];
 #[derive(Debug, Clone, Copy)]
-enum CursorChange {
-    New,          // everything is new
+enum CursorChange {          // everything is new
     WindowChange, // only the window information is new,
     PosChange,    // Only the position is new
     ButtonChange, // when the button has been changed
@@ -243,9 +243,7 @@ impl Snake {
             CursorChange::PosChange => {
                 self.mouse.pos = info.pos;
             }
-            CursorChange::New => {
-                self.mouse = info;
-            }
+           
             CursorChange::ButtonChange => {
                 self.mouse.button_press = info.button_press;
             }
