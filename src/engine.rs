@@ -171,6 +171,7 @@ pub fn run() {
     draw(0, CursorInfo::new());
     let mut run_game = true;
     // the main loop
+    //TODO: make sure mouse movement does not speed up the framerate
     event_loop.run(move |event, _, control_flow| {
         let start_time = Instant::now();
         *control_flow = match event {
