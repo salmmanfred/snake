@@ -243,9 +243,6 @@ impl Snake {
             }
 
 
-            _=>{
-                panic!("mouse info is empty")
-            }
         }
     }
     pub fn register_button(&mut self, etc: [f32;5],col: [f32;3])->usize{
@@ -498,24 +495,33 @@ fn translate_mouse_cords(pos: [f64;2])->[f64;2]{
         new_pos[0] = posx;
     }
 
-    pos[1] = 500.- pos[1];
+    
+   // pos[1] = 500.- pos[1];
     if pos[1] <= 250.{
-        let it1 = (pos[1] / -25.); //+ 10.;
-        let posy = it1/ 10.;
-      //  println!("posx: {posy} {} {} +",it1,pos[1]);
+   // pos[1] = 500.- pos[1];
+
+    }
+
+    if pos[1] >= 250.{
+        let it1 = (pos[1] / -25.);
+        let mut posy = it1/ 10.;
+        posy +=0.6;
+        println!("posx: {posy} {} {} +",it1,pos[1]);
         new_pos[1] = posy + 0.3;
 
     }else{
-        let it1 = (pos[1] / 25.) - 10. ;
-        let posy = it1 / 10.;
-       // println!("posx: {posy} {} {} -",it1,it1*-25.);
+        let it1 = (pos[1] / -25.);// - 10. ;
+        let mut posy = it1 / 10.;
+        posy += 1.;
+
+        println!("posx: {posy} {} {} -",it1,it1*-25.);
 
 
 
         new_pos[1] = posy - 0.1;
         
     }
-    println!("translated pos: {:?}",new_pos);
+   // println!("translated pos: {:?}",new_pos);
 
     new_pos
 }
