@@ -1,6 +1,6 @@
 use std::fs::File;
 
-use crate::{Snake, CursorInfo};
+use crate::{CursorInfo, Snake};
 extern crate glium_text_rusttype as glium_text;
 
 #[derive(Copy, Clone)]
@@ -30,15 +30,13 @@ pub fn run() {
             width: 500.,
             height: 500.,
         }));
-    
-    
 
     let cb = glutin::ContextBuilder::new();
     let display = Display::new(wb, cb, &event_loop).unwrap();
     let scale_factor = display.gl_window().window().scale_factor();
 
     // building the vertex buffer, which contains all the vertices that we will draw
-    
+
     let system = glium_text::TextSystem::new(&display);
     display.get_context().get_context();
 
@@ -104,31 +102,23 @@ pub fn run() {
     let mut snake = Snake::new(true);
 
     let matrix = [
-            [1.0, 0.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0f32],
-        ];
-        
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0f32],
+    ];
 
-        
+    // building the uniforms
+    let uniforms = uniform! {
+        matrix: matrix.clone()
+    };
 
-      
-
-        // building the uniforms
-        let uniforms = uniform! {
-            matrix: matrix.clone()
-        };
-
-    let mut draw = move |x: u32, mouse:CursorInfo| {
+    let mut draw = move |x: u32, mouse: CursorInfo| {
         let mut target = display.draw();
         target.clear_color(0.0, 0.3, 0.0, 0.0);
 
         snake.keypr(x);
         snake.move_mouse(mouse);
-
-        
-        
 
         // drawing a frame
         let (pbuf, fbuf) = snake.render();
@@ -151,34 +141,32 @@ pub fn run() {
                 &Default::default(),
             )
             .unwrap();
-            let (w, h) = display.get_framebuffer_dimensions();
+        let (w, h) = display.get_framebuffer_dimensions();
 
+        for x in 0..snake.index_size() {
+            let text = snake.text_info_get(x);
+            let text = glium_text::TextDisplay::new(&system, &font, &text);
 
-            for x in 0..snake.index_size() {
-                let text = snake.text_info_get(x);
-                let text = glium_text::TextDisplay::new(&system, &font, &text);
-    
-                let text_width = text.get_width();
-    
-                snake.update_text_info((w as f32, h as f32, text_width));
-                let matrix_text = snake.render_text(x);
-    
-                glium_text::draw(
-                    &text,
-                    &system,
-                    &mut target,
-                    matrix_text,
-                    (0.0, 0.0, 0.0, 1.0),
-                )
-                .unwrap();
-            }
+            let text_width = text.get_width();
 
-        
+            snake.update_text_info((w as f32, h as f32, text_width));
+            let matrix_text = snake.render_text(x);
+
+            glium_text::draw(
+                &text,
+                &system,
+                &mut target,
+                matrix_text,
+                (0.0, 0.0, 0.0, 1.0),
+            )
+            .unwrap();
+        }
+
         target.finish().unwrap();
     };
 
     // Draw the triangle to the screen.
-    draw(0,CursorInfo::new());
+    draw(0, CursorInfo::new());
     let mut run_game = true;
     // the main loop
     event_loop.run(move |event, _, control_flow| {
@@ -188,34 +176,33 @@ pub fn run() {
                 glutin::event::WindowEvent::CloseRequested => glutin::event_loop::ControlFlow::Exit,
                 // Redraw the triangle when the window is resized.
                 glutin::event::WindowEvent::Resized(..) => {
-                    draw(0,CursorInfo::new());
+                    draw(0, CursorInfo::new());
                     glutin::event_loop::ControlFlow::Poll
                 }
                 glutin::event::WindowEvent::Focused(a) => {
-                    
-                        run_game = a;
-                    
-                    glutin::event_loop::ControlFlow::Poll
-                }
-                glutin::event::WindowEvent::CursorEntered { device_id: _ } =>{
-                    draw(0,CursorInfo::window_left(true));
-                   
-                    glutin::event_loop::ControlFlow::Poll
-                }
-                glutin::event::WindowEvent::CursorLeft { device_id: _ } =>{
-                    draw(0,CursorInfo::window_left(false));
-                    
-                    
-                    glutin::event_loop::ControlFlow::Poll
-                }
-                glutin::event::WindowEvent::CursorMoved { device_id: _, position, modifiers: _ } =>{
+                    run_game = a;
 
-                    let position = position.to_logical(scale_factor);
-                    draw(0,CursorInfo::pos([position.x,position.y]));
-                    
-                    
                     glutin::event_loop::ControlFlow::Poll
-                    
+                }
+                glutin::event::WindowEvent::CursorEntered { device_id: _ } => {
+                    draw(0, CursorInfo::window_left(true));
+
+                    glutin::event_loop::ControlFlow::Poll
+                }
+                glutin::event::WindowEvent::CursorLeft { device_id: _ } => {
+                    draw(0, CursorInfo::window_left(false));
+
+                    glutin::event_loop::ControlFlow::Poll
+                }
+                glutin::event::WindowEvent::CursorMoved {
+                    device_id: _,
+                    position,
+                    modifiers: _,
+                } => {
+                    let position = position.to_logical(scale_factor);
+                    draw(0, CursorInfo::pos([position.x, position.y]));
+
+                    glutin::event_loop::ControlFlow::Poll
                 }
 
                 _ => glutin::event_loop::ControlFlow::Poll,
@@ -226,12 +213,11 @@ pub fn run() {
             } => {
                 match event {
                     glutin::event::DeviceEvent::Key(a) => {
-                        match a.scancode{
-                            1 =>{
-                                run_game = false;
-                                
+                        match a.scancode {
+                            1 => {
+                                // run_game = false;
                             }
-                            _=>{}
+                            _ => {}
                         }
 
                         draw(a.scancode, CursorInfo::new());
@@ -239,21 +225,19 @@ pub fn run() {
 
                         glutin::event_loop::ControlFlow::Poll
                     }
-                    glutin::event::DeviceEvent::Button { button, state:_ } =>{
-                        if button == 1{
-                            draw(0,CursorInfo::button_press(true))
+                    glutin::event::DeviceEvent::Button { button, state: _ } => {
+                        if button == 1 {
+                            draw(0, CursorInfo::button_press(true))
                         }
                         glutin::event_loop::ControlFlow::Poll
-
                     }
-                    
 
                     _ => glutin::event_loop::ControlFlow::Poll,
                 }
             }
             _ => {
-                if run_game{
-                    draw(0,CursorInfo::new());
+                if run_game {
+                    draw(0, CursorInfo::new());
                 }
                 glutin::event_loop::ControlFlow::Poll
             }

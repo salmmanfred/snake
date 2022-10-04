@@ -7,7 +7,6 @@ use crate::game::GameLogic;
 
 use handy_macros::s;
 
-
 use crate::engine::Vertex;
 
 const RED: [f32; 3] = [1., 0., 0.];
@@ -15,40 +14,56 @@ const GREEN: [f32; 3] = [0., 1., 0.];
 const DARK_GREEN: [f32; 3] = [0., 0.6, 0.];
 const BLUE: [f32; 3] = [0., 0., 1.];
 const WHITE: [f32; 3] = [1., 1., 1.];
-#[derive(Debug,Clone, Copy)]
-enum CursorChange{
-    New, // everything is new 
+#[derive(Debug, Clone, Copy)]
+enum CursorChange {
+    New,          // everything is new
     WindowChange, // only the window information is new,
-    PosChange, // Only the position is new
+    PosChange,    // Only the position is new
     ButtonChange, // when the button has been changed
-    NoNewInfo,// the obj is empty and should be thrownaway
+    NoNewInfo,    // the obj is empty and should be thrownaway
 }
 
-
-#[derive(Debug,Clone, Copy)]
-pub struct CursorInfo{
-    pos: [f64;2],
+#[derive(Debug, Clone, Copy)]
+pub struct CursorInfo {
+    pos: [f64; 2],
     in_window: bool,
     button_press: bool,
-    info: CursorChange
-
+    info: CursorChange,
 }
-impl CursorInfo{
-    pub fn new()->Self{
-        Self { pos: [0.,0.],in_window: false, button_press: false, info:CursorChange::NoNewInfo }
+impl CursorInfo {
+    pub fn new() -> Self {
+        Self {
+            pos: [0., 0.],
+            in_window: false,
+            button_press: false,
+            info: CursorChange::NoNewInfo,
+        }
     }
-    pub fn pos(pos:[f64;2])->Self{
-        Self { pos, in_window: false, button_press: false, info: CursorChange::PosChange }
+    pub fn pos(pos: [f64; 2]) -> Self {
+        Self {
+            pos,
+            in_window: false,
+            button_press: false,
+            info: CursorChange::PosChange,
+        }
     }
-    pub fn window_left(info: bool)->Self{
-        Self { pos: [0.,0.], in_window: info, button_press: false,  info: CursorChange::WindowChange }
+    pub fn window_left(info: bool) -> Self {
+        Self {
+            pos: [0., 0.],
+            in_window: info,
+            button_press: false,
+            info: CursorChange::WindowChange,
+        }
     }
-    pub fn button_press(info: bool)->Self{
-        Self { pos: [0.,0.], in_window: false, button_press: info,  info: CursorChange::ButtonChange }
-
+    pub fn button_press(info: bool) -> Self {
+        Self {
+            pos: [0., 0.],
+            in_window: false,
+            button_press: info,
+            info: CursorChange::ButtonChange,
+        }
     }
 }
-
 
 pub enum Fne {
     None,
@@ -64,13 +79,12 @@ pub struct Snake {
     data_text: Vec<((f32, f32, f32), String)>,
     text_info: (f32, f32, f32),
     // update loop
-    updater: Fne,
-    menue: Fne,
-    end_game: Fne,
+    rooms: Vec<Fne>,
     //current interface
     interface: usize,
     //score
     score: usize,
+    lost: bool,
     // input stuff
     key: u32,
     mouse: CursorInfo,
@@ -80,9 +94,7 @@ pub struct Snake {
     //button stuff
     //x,y sizex,sizey,sizetext in the f32;5
     // colour in f32;3
-    buttons: Vec<([f32;5],[f32;3])>,
-    
-
+    buttons: Vec<([f32; 5], [f32; 3])>,
 }
 impl Snake {
     pub fn new(d: bool) -> Self {
@@ -92,25 +104,19 @@ impl Snake {
             data: Vec::new(),
             data_long: Vec::new(),
             key: 0,
-            updater: Fne::None,
-            menue: Fne::None,
-            end_game: Fne::None,
+            rooms: Vec::new(),
             interface: 0,
             score: 0,
+            lost: false,
             data_text: Vec::new(),
             text_info: (0., 0., 0.),
             buttons: Vec::new(),
             mouse: CursorInfo::new(),
-            
         };
 
         match d {
             true => {
-                let (m,l, e) = Self::fun_update();
-                snake.menue = m;
-                snake.updater = l;
-                snake.end_game = e;
-
+                snake.rooms = Snake::rooms();
 
                 return snake;
             }
@@ -121,7 +127,7 @@ impl Snake {
     pub fn keypr(&mut self, k: u32) {
         self.key = k;
     }
-    
+
     pub fn update_text_info(&mut self, info: (f32, f32, f32)) {
         self.text_info = info;
     }
@@ -154,8 +160,6 @@ impl Snake {
         self.data_text.push(((posx, posy, size), s!(text)))
     }
 
-    
-
     pub fn render(&mut self) -> (Vec<Vertex>, Vec<u16>) {
         self.data_long = Vec::new();
         self.data = Vec::new();
@@ -166,54 +170,15 @@ impl Snake {
         sn.mouse = self.mouse;
         sn.interface = self.interface;
         sn.score = self.score;
-        match self.interface {
-            0=>{// menue
-                match &mut self.menue {
-                    Fne::None => {
-                        panic!("This cannot happen")
-                    }
-                    Fne::Fun(a) => a(&mut sn),
-                }
-            }
 
-            1=>{ // actuall game
-                match &mut self.updater {
-                    Fne::None => {
-                        panic!("This cannot happen")
-                    }
-                    Fne::Fun(a) => a(&mut sn),
-                }
+        match &mut self.rooms[self.interface] {
+            Fne::None => {
+                panic!("This cannot happen")
             }
-            2=>{ // end screen
-                match &mut self.end_game {
-                    Fne::None => {
-                        panic!("This cannot happen")
-                    }
-                    Fne::Fun(a) =>{ 
-                        let (_,b,_) = Self::fun_update();
-                        self.updater = b;
-                        a(&mut sn)
-                    },
-                }
-            }
-            3=>{ // Pause
-                match &mut self.end_game {
-                    Fne::None => {
-                        panic!("This cannot happen")
-                    }
-                    Fne::Fun(a) =>{ 
-                       
-                        a(&mut sn)
-                    },
-                }
-            }
-            _=>{
-                panic!("invalid interface")
-            }
+            Fne::Fun(a) => a(&mut sn),
         }
-        
         //(self.updater.un())(&mut sn);
-        
+
         self.data = sn.data;
         self.interface = sn.interface;
         self.data_long = sn.data_long;
@@ -221,7 +186,9 @@ impl Snake {
         self.titbool = sn.titbool;
         self.data_text = sn.data_text;
         self.score = sn.score;
-        
+        if sn.lost {
+            self.rooms = Self::rooms();
+        }
 
         let mut g = Vec::new();
         for x in self.data_long.iter() {
@@ -239,8 +206,8 @@ impl Snake {
         };
     }
 
-    fn rectangle(&mut self, pos: [f32;2], sizex: f32, sizey: f32, color: [f32; 3]) {
-        let (x,y) = (pos[0],pos[1]);
+    fn rectangle(&mut self, pos: [f32; 2], sizex: f32, sizey: f32, color: [f32; 3]) {
+        let (x, y) = (pos[0], pos[1]);
 
         let buff = vec![
             Vertex::new([x + sizex, y + sizey], color),
@@ -253,7 +220,7 @@ impl Snake {
         self.data.extend(buff.iter());
         for _ in 0..6 {
             let val = self.latest_long();
-            
+
             self.data_long.push(val + 1)
         }
     }
@@ -267,78 +234,65 @@ impl Snake {
         //self.titbool = false;
         (titbool, &self.title)
     }
-    pub fn move_mouse(&mut self,info: CursorInfo){
-       
-        
-
-       // println!("sent here");
+    pub fn move_mouse(&mut self, info: CursorInfo) {
+        // println!("sent here");
         match info.info {
-             CursorChange::WindowChange =>{
-                
+            CursorChange::WindowChange => {
                 self.mouse.in_window = info.in_window;
-
             }
-            CursorChange::PosChange =>{
-              
+            CursorChange::PosChange => {
                 self.mouse.pos = info.pos;
-      
             }
-            CursorChange::New =>{
+            CursorChange::New => {
                 self.mouse = info;
-   
-
             }
-            CursorChange::ButtonChange =>{
+            CursorChange::ButtonChange => {
                 self.mouse.button_press = info.button_press;
-                
             }
-            
-            CursorChange::NoNewInfo =>{
+
+            CursorChange::NoNewInfo => {
                 self.mouse.button_press = false;
 
                 drop(info);
-        //println!("sent here4");
-
+                //println!("sent here4");
             }
-
-
         }
     }
-    pub fn register_button(&mut self, etc: [f32;5],col: [f32;3])->usize{
-        self.buttons.push((etc,col));
+    pub fn register_button(&mut self, etc: [f32; 5], col: [f32; 3]) -> usize {
+        self.buttons.push((etc, col));
         self.buttons.len()
-        
     }
-    pub fn button(&mut self, pos: [f32;2],size:[f32;3],fine_tuning: [f32;2],col: [f32; 3],text: &str) -> usize{
-
+    pub fn button(
+        &mut self,
+        pos: [f32; 2],
+        size: [f32; 3],
+        fine_tuning: [f32; 2],
+        col: [f32; 3],
+        text: &str,
+    ) -> usize {
         // translate graphics coordinates to text coordinates
         // seems like 1 point in textcord is the same as 0.1 in graphics cords
-        // so pos[0] * 10 should be it 
+        // so pos[0] * 10 should be it
         // leave fine_tuning to [10,10] for standard
 
         let text_pos = [pos[0] * fine_tuning[0], pos[1] * fine_tuning[1]];
         self.text(text_pos[0], text_pos[1], size[2], text);
         self.rectangle(pos, size[0], size[1], col);
-        self.register_button([pos[0],pos[1],size[0],size[1],size[2]], col)
-
-
+        self.register_button([pos[0], pos[1], size[0], size[1], size[2]], col)
     }
 
-    pub fn button_manager(&mut self)->usize{
+    pub fn button_manager(&mut self) -> usize {
         /*let mousepos = translate_mouse_cords(self.mouse.pos);
             let mousex = mousepos[0];
             let mousey = mousepos[1];
         self.rectangle([mousex as f32,mousey as f32], 0.1, 0.1, WHITE);*/
-       
-        
-        if self.mouse.button_press && self.mouse.in_window{
+
+        if self.mouse.button_press && self.mouse.in_window {
             let mousepos = translate_mouse_cords(self.mouse.pos);
             let mousex = mousepos[0];
             let mousey = mousepos[1];
 
-            
-           
-            for (i,o) in self.buttons.iter().enumerate(){
+            for (i, o) in self.buttons.iter().enumerate() {
                 let o = *o;
                 let x = o.0;
                 let bx = x[0] as f64;
@@ -346,38 +300,22 @@ impl Snake {
                 let bw = x[2] as f64;
                 let bh = x[3] as f64;
 
-
-                if 
-                    bx < mousex + 0.05 &&
-                    bx + bw > mousex &&
-                    by < mousey + 0.05 &&
-                    bh + by > mousey
-                   {
-
-                    return i+1;
-                   }
+                if bx < mousex + 0.05 && bx + bw > mousex && by < mousey + 0.05 && bh + by > mousey
+                {
+                    return i + 1;
+                }
             }
-            return 0
-
-
-        }else{
-            return 0
+            return 0;
+        } else {
+            return 0;
         }
     }
-
-
-    fn fun_update() -> (Fne,Fne,Fne) {
-        (Self::menue(),Self::game_loop(),Self::end_screen())
-
-    }
-
 }
-
 
 // TODO: add fixed intervals use time or something
 // TODO: UI (Done)
 // TODO: Make a menue (Done)
-// TODO: Colour change on the text
+// TODO: Text overhaul
 // TODO: Comments
 // TODO: Clean up rendering pipeline and speeding up (WIP)
 // TODO: Finish game
@@ -385,16 +323,9 @@ fn main() {
     engine::run();
 }
 
-
-
-
-
-
 //make the mouse cords get into graphics cords
-fn translate_mouse_cords(pos: [f64;2])->[f64;2]{
-    
-        // you might be asking how i got these numbers and if I got them using some sort of 
-        //mathematical formula but no this is by trial and error
-        [((pos[0] / 250.) -1.),((pos[1] / -250.) + 0.9)]
-    
+fn translate_mouse_cords(pos: [f64; 2]) -> [f64; 2] {
+    // you might be asking how i got these numbers and if I got them using some sort of
+    //mathematical formula but no this is by trial and error
+    [((pos[0] / 250.) - 1.), ((pos[1] / -250.) + 0.9)]
 }
