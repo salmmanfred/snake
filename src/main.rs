@@ -6,7 +6,7 @@ mod game;
 use crate::game::GameLogic;
 
 use handy_macros::s;
-use rand::{thread_rng, Rng};
+
 
 use crate::engine::Vertex;
 
