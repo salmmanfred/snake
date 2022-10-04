@@ -122,9 +122,7 @@ fn game_loop() -> Fne {
             }
             _ => {}
         }
-        if frame == 30000 {
-            // panic!("fuck you continue coding")
-        }
+       
 
         if frame % 200 == 0 {
             x += ax;
@@ -133,29 +131,31 @@ fn game_loop() -> Fne {
 
             for (i, ii) in snakebod.iter().enumerate() {
                 //  println!("{},{},{}",i,&format!("{:.2},{:.2} ",ii[0].abs(),ii[1].abs()),&format!("{:.2},{:.2} ",x.abs(),y.abs()) );
-
-                if &format!("{:.2},{:.2} ", ii[0] + 0.00001, ii[1] + 0.00001)
-                    == &format!("{:.2},{:.2} ", x + 0.00001, y + 0.00001)
+                
+                if (((ii[0]*100.).round() / 100.)+0.0001,((ii[1]*100.).round() / 100.)+0.0001) == 
+                (((x*100.).round() / 100.)+0.0001,((y*100.).round() / 100.)+0.0001)
                     && i <= snakebod.len() - 1
                 {
-                    //panic!("GAME LOST");
+                   
                     s.interface = 2;
 
                     s.lost = true;
                 }
             }
+            if (((applex*100.).round() / 100.)+0.0001,((appley*100.).round() / 100.)+0.0001) == 
+            (((x*100.).round() / 100.)+0.0001,((y*100.).round() / 100.)+0.0001) {
+                snek_len += 1;
+                let xy = new_apple([spedx, spedy]);
+    
+                applex = xy[0] + 0.000001;
+                appley = xy[1] + 0.000001;
+                s.score = snek_len;
+            }
             snakebod.push([x, y]);
         }
 
         //collision
-        if format!("{:.2},{:.2} ", applex, appley) == format!("{:.2},{:.2} ", x, y) {
-            snek_len += 1;
-            let xy = new_apple([spedx, spedy]);
-
-            applex = xy[0] + 0.000001;
-            appley = xy[1] + 0.000001;
-            s.score = snek_len;
-        }
+        
 
         s.text(-10., 7., 2., &format!("Score: {} ", snek_len));
 
@@ -171,8 +171,8 @@ fn game_loop() -> Fne {
 
         s.rectangle([applex, appley], spedx, spedy, RED);
 
-        for pos in snakebod.clone() {
-            s.rectangle(pos, spedx, spedy, BLUE);
+        for pos in &snakebod {
+            s.rectangle(*pos, spedx, spedy, BLUE);
         }
 
         frame += 1;

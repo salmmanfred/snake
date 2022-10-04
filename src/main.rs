@@ -13,7 +13,7 @@ const RED: [f32; 3] = [1., 0., 0.];
 #[allow(dead_code)]
 const GREEN: [f32; 3] = [0., 1., 0.];
 const DARK_GREEN: [f32; 3] = [0., 0.6, 0.];
-const BLUE: [f32; 3] = [0., 0., 1.];
+const BLUE: [f32; 3] = [0., 0.09, 1.];
 const WHITE: [f32; 3] = [1., 1., 1.];
 #[derive(Debug, Clone, Copy)]
 enum CursorChange {          // everything is new
@@ -134,9 +134,9 @@ impl Snake {
     pub fn index_size(&mut self) -> usize {
         self.data_text.len()
     }
-    pub fn text_info_get(&self, index: usize) -> String {
-        let (_, text) = self.data_text[index].clone();
-        text
+    pub fn text_info_get(&self, index: usize) -> &String {
+        &self.data_text[index].1
+      
     }
     pub fn render_text(&mut self, index: usize) -> [[f32; 4]; 4] {
         let ((x, y, size), _) = self.data_text[index];
@@ -160,22 +160,18 @@ impl Snake {
         self.data_text.push(((posx, posy, size), s!(text)))
     }
 
-    pub fn render(&mut self) -> (Vec<Vertex>, Vec<u16>) {
-        self.data_long = Vec::new();
-        self.data = Vec::new();
-        self.data_text = Vec::new();
+    pub fn render(&mut self) -> (&Vec<Vertex>,&Vec<u16>) {
+      
 
         let mut sn = Snake::new(false);
-        sn.key = self.key.clone();
+        sn.key = self.key;
         sn.mouse = self.mouse;
         sn.interface = self.interface;
         sn.score = self.score;
 
         match &mut self.rooms[self.interface] {
-            Fne::None => {
-                panic!("This cannot happen")
-            }
             Fne::Fun(a) => a(&mut sn),
+            _=>{}
         }
         //(self.updater.un())(&mut sn);
 
@@ -186,18 +182,12 @@ impl Snake {
         self.titbool = sn.titbool;
         self.data_text = sn.data_text;
         self.score = sn.score;
+
         if sn.lost {
             self.rooms = Self::rooms();
-        }
+        } 
 
-        let mut g = Vec::new();
-        for x in self.data_long.iter() {
-            g.push(*x - 1);
-        }
-
-        // println!("v {:#?}",g);
-
-        (self.data.clone(), g)
+        (&self.data, &self.data_long)
     }
     pub fn latest_long(&self) -> u16 {
         return match self.data_long.len() {
@@ -218,10 +208,8 @@ impl Snake {
             Vertex::new([x, y], color),
         ];
         self.data.extend(buff.iter());
-        for _ in 0..6 {
-            let val = self.latest_long();
-
-            self.data_long.push(val + 1)
+        for x in self.data_long.len()..self.data_long.len()+6 {
+            self.data_long.push(x as u16)
         }
     }
     pub fn _change_title(&mut self, title: &str) {

@@ -112,6 +112,7 @@ pub fn run() {
     let uniforms = uniform! {
         matrix: matrix.clone()
     };
+    let (w, h) = display.get_framebuffer_dimensions();
 
     let mut draw = move |x: u32, mouse: CursorInfo| {
         let mut target = display.draw();
@@ -141,15 +142,15 @@ pub fn run() {
                 &Default::default(),
             )
             .unwrap();
-        let (w, h) = display.get_framebuffer_dimensions();
 
+       
         for x in 0..snake.index_size() {
             let text = snake.text_info_get(x);
-            let text = glium_text::TextDisplay::new(&system, &font, &text);
+            let text = glium_text::TextDisplay::new(&system, &font, text);
 
-            let text_width = text.get_width();
+            
 
-            snake.update_text_info((w as f32, h as f32, text_width));
+            snake.update_text_info((w as f32, h as f32, text.get_width()));
             let matrix_text = snake.render_text(x);
 
             glium_text::draw(
