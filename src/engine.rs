@@ -35,6 +35,8 @@ pub fn run() {
 
     let cb = glutin::ContextBuilder::new();
     let display = Display::new(wb, cb, &event_loop).unwrap();
+    let scale_factor = display.gl_window().window().scale_factor();
+
     // building the vertex buffer, which contains all the vertices that we will draw
     
     let system = glium_text::TextSystem::new(&display);
@@ -211,7 +213,7 @@ pub fn run() {
                 }
                 glutin::event::WindowEvent::CursorMoved { device_id: _, position, modifiers: _ } =>{
 
-                    let position = position.to_logical(1.);
+                    let position = position.to_logical(scale_factor);
                     draw(0,CursorInfo::pos([position.x,position.y]));
                     
                     
