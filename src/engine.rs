@@ -4,6 +4,9 @@ use crate::{CursorInfo, Snake};
 extern crate glium_text_rusttype as glium_text;
 use std::time::Instant;
 
+const TIMEPF: u64 = 17;
+
+
 #[derive(Copy, Clone)]
 pub struct Vertex {
     position: [f32; 2],
@@ -198,6 +201,7 @@ pub fn run() {
 
                     glutin::event_loop::ControlFlow::Poll
                 }
+                #[allow(deprecated)]
                 glutin::event::WindowEvent::CursorMoved {
                     device_id: _,
                     position,
@@ -206,7 +210,8 @@ pub fn run() {
                     let position = position.to_logical(scale_factor);
                     draw(0, CursorInfo::pos([position.x, position.y]));
 
-                    glutin::event_loop::ControlFlow::Poll
+                    let wait = start_time + std::time::Duration::from_millis(TIMEPF);
+                    glutin::event_loop::ControlFlow::WaitUntil(wait)
                 }
 
                 _ => glutin::event_loop::ControlFlow::Poll,
@@ -227,13 +232,15 @@ pub fn run() {
                         draw(a.scancode, CursorInfo::new());
                         //s println!("key: {}",a.scancode);
 
-                        glutin::event_loop::ControlFlow::Poll
+                        let wait = start_time + std::time::Duration::from_millis(TIMEPF);
+                        glutin::event_loop::ControlFlow::WaitUntil(wait)
                     }
                     glutin::event::DeviceEvent::Button { button, state: _ } => {
                         if button == 1 {
                             draw(0, CursorInfo::button_press(true))
                         }
-                        glutin::event_loop::ControlFlow::Poll
+                        let wait = start_time + std::time::Duration::from_millis(TIMEPF);
+                        glutin::event_loop::ControlFlow::WaitUntil(wait)
                     }
 
                     _ => glutin::event_loop::ControlFlow::Poll,
@@ -243,7 +250,7 @@ pub fn run() {
                 if run_game {
                     draw(0, CursorInfo::new());
                 }
-                let wait = start_time + std::time::Duration::from_millis(17);
+                let wait = start_time + std::time::Duration::from_millis(TIMEPF);
                 glutin::event_loop::ControlFlow::WaitUntil(wait)
             }
         };
