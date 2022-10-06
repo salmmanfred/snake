@@ -75,28 +75,49 @@ fn game_loop() -> Fne {
 
     let grid = create_grid();
     
+    let mut dir = 0;
+
     let now = Instant::now();
     let up = move |s: &mut Snake| {
+        
         match s.key {
             17 => {
+                if dir != 0{
                 // W
                 ay = spedy;
                 ax = 0.;
+                dir = 2;
+
+                }
+                
             }
             30 => {
+                if dir != 1{
                 // A
                 ay = 0.;
                 ax = spedx * -1.;
+                dir = 3;
+
+                }
             }
             31 => {
+                if dir != 2{
+
                 // S
                 ay = spedy * -1.;
                 ax = 0.;
+                dir = 0;
+
+                }
             }
             32 => {
+                if dir != 3{
+
                 // D
                 ay = 0.;
                 ax = spedx;
+                dir = 1;
+                }
             }
             1 => {
                 // change to the pause screen.
