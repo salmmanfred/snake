@@ -132,7 +132,8 @@ fn game_loop() -> Fne {
             }
             // checks collision with the apple 
             if (((applex*100.).round() / 100.)+0.0001,((appley*100.).round() / 100.)+0.0001) == 
-            (((x*100.).round() / 100.)+0.0001,((y*100.).round() / 100.)+0.0001) {
+            (((x*100.).round() / 100.)+0.0001,((y*100.).round() / 100.)+0.0001)
+            {
                 // add lenght 
                 snek_len += 1;
                 // new apple position
@@ -142,6 +143,13 @@ fn game_loop() -> Fne {
                 appley = xy[1] + 0.000001;
                 
                 s.score = snek_len;
+            }
+            // make sure you die on the border 
+            if x >= 1. || x<= -1.1 || y>=1. || y <= -1.1{
+                 // change to loss screen
+                 s.interface = 2;
+                 // enable lost so it resets everything.
+                 s.lost = true;
             }
             snakebod.push([x, y]);
         }

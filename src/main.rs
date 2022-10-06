@@ -336,7 +336,7 @@ impl Snake {
 // TODO: Text overhaul 
 // TODO: Comments (Done)
 // TODO: Clean up rendering pipeline and speeding up (WIP)
-// TODO: Finish game
+// TODO: Finish game (Done)
 fn main() {
     engine::run();
 }
