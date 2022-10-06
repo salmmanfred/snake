@@ -4,6 +4,7 @@ use crate::{CursorInfo, Snake};
 extern crate glium_text_rusttype as glium_text;
 use std::time::Instant;
 
+// how much time between frames.
 const TIMEPF: u64 = 17;
 
 
@@ -18,15 +19,17 @@ impl Vertex {
     }
 }
 
-use glium::backend::Facade;
+
 use glium::index::PrimitiveType;
 #[allow(unused_imports)]
 use glium::{backend, glutin, Surface};
 
 use glium::Display;
-
+// main
 pub fn run() {
+    // create the event loop then the window builder
     let event_loop = glutin::event_loop::EventLoop::new();
+    // the window has the title Snake and the size 500 by 500 and cant be resized
     let wb = glutin::window::WindowBuilder::new()
         .with_title("Snake")
         .with_resizable(false)
@@ -34,18 +37,18 @@ pub fn run() {
             width: 500.,
             height: 500.,
         }));
-
+    // creates the context builder then the display 
     let cb = glutin::ContextBuilder::new();
     let display = Display::new(wb, cb, &event_loop).unwrap();
+    // get the scale factor (used by the mouse)
     let scale_factor = display.gl_window().window().scale_factor();
 
-    // building the vertex buffer, which contains all the vertices that we will draw
-
+    
+    //building the text system 
     let system = glium_text::TextSystem::new(&display);
-    display.get_context().get_context();
+    
 
-    // Creating a `FontTexture`, which a regular `Texture` which contains the font.
-    // Note that loading the systems fonts is not covered by this library.
+    // creates the font used by text making later
     let font = glium_text::FontTexture::new(
         &display,
         File::open("./src/OpenSans-Medium.ttf").unwrap(),
@@ -53,21 +56,8 @@ pub fn run() {
         glium_text::FontTexture::ascii_character_list(),
     )
     .unwrap();
-
+    // impl vertex
     implement_vertex!(Vertex, position, color);
-
-    /*   let vertex_buffer =     glium::VertexBuffer::new(&display,
-            &[
-                Vertex { position: [-0.5, -0.5], color: [0.0, 1.0, 0.0] },
-                Vertex { position: [ 0.0,  0.5], color: [0.0, 0.0, 1.0] },
-                Vertex { position: [ 0.5, -0.5], color: [1.0, 0.0, 0.0] },
-            ]
-        ).unwrap();
-
-
-    // building the index buffer
-    let index_buffer = glium::IndexBuffer::new(&display, PrimitiveType::TrianglesList,
-                                               &[0u16, 1, 2,3,4,5]).unwrap();*/
 
     // compiling shaders and linking them together
     let program = program!(&display,
@@ -97,14 +87,10 @@ pub fn run() {
     )
     .unwrap();
 
-    // Here we draw the black background and triangle to the screen using the previously
-    // initialised resources.
-    //
-    // In this case we use a closure for simplicity, however keep in mind that most serious
-    // applications should probably use a function that takes the resources as an argument.
-
+    
+    // here we create the snake 
     let mut snake = Snake::new(true);
-
+    
     let matrix = [
         [1.0, 0.0, 0.0, 0.0],
         [0.0, 1.0, 0.0, 0.0],
@@ -116,27 +102,30 @@ pub fn run() {
     let uniforms = uniform! {
         matrix: matrix.clone()
     };
+    // used later by text 
     let (w, h) = display.get_framebuffer_dimensions();
+    snake.update_text_info((w as f32, h as f32));
 
+    // draw loop
     let mut draw = move |x: u32, mouse: CursorInfo| {
+        // create target and clear screen
         let mut target = display.draw();
         target.clear_color(0.0, 0.3, 0.0, 0.0);
-
+        // changes keypresses and moving the mouse
         snake.keypr(x);
         snake.move_mouse(mouse);
 
-        // drawing a frame
+        // getting the fragment buffers and vertex buffers then creates them
         let (pbuf, fbuf) = snake.render();
         let index_buffer =
             glium::IndexBuffer::new(&display, PrimitiveType::TrianglesList, &fbuf).unwrap();
-
         let vertex_buffer = glium::VertexBuffer::new(&display, &pbuf).unwrap();
+        // checks if there is a new title and gets the title
         let (new_title, title) = snake.title();
-
-        if new_title {
+        if *new_title {
             display.gl_window().window().set_title(title);
         }
-
+        // draws the grahpics to the screen
         target
             .draw(
                 &vertex_buffer,
@@ -147,16 +136,16 @@ pub fn run() {
             )
             .unwrap();
 
-       
+        // checks all the text that is suppose to be written
         for x in 0..snake.index_size() {
+            // get the text info
             let text = snake.text_info_get(x);
+            // create the text 
             let text = glium_text::TextDisplay::new(&system, &font, text);
 
-            
-
-            snake.update_text_info((w as f32, h as f32, text.get_width()));
-            let matrix_text = snake.render_text(x);
-
+            // get the text matrix
+            let matrix_text = snake.render_text(x, text.get_width() as f32);
+            // draw the text 
             glium_text::draw(
                 &text,
                 &system,
@@ -166,15 +155,16 @@ pub fn run() {
             )
             .unwrap();
         }
-
+        //finish
         target.finish().unwrap();
     };
 
     // Draw the triangle to the screen.
     draw(0, CursorInfo::new());
+    // if the game should be ran
     let mut run_game = true;
     // the main loop
-    //TODO: make sure mouse movement does not speed up the framerate
+    //TODO: make sure mouse movement does not speed up the framerate (KINDA DONE)
     event_loop.run(move |event, _, control_flow| {
         let start_time = Instant::now();
         *control_flow = match event {
@@ -187,16 +177,19 @@ pub fn run() {
                     glutin::event_loop::ControlFlow::Poll
                 }
                 glutin::event::WindowEvent::Focused(a) => {
+                    // if the game is not focused it should noot be running 
                     run_game = a;
 
                     glutin::event_loop::ControlFlow::Poll
                 }
                 glutin::event::WindowEvent::CursorEntered { device_id: _ } => {
+                    // the mouse entred the window 
                     draw(0, CursorInfo::window_left(true));
 
                     glutin::event_loop::ControlFlow::Poll
                 }
                 glutin::event::WindowEvent::CursorLeft { device_id: _ } => {
+                    // the mouse left
                     draw(0, CursorInfo::window_left(false));
 
                     glutin::event_loop::ControlFlow::Poll
@@ -207,9 +200,11 @@ pub fn run() {
                     position,
                     modifiers: _,
                 } => {
+                    // logical position of the mouse 
                     let position = position.to_logical(scale_factor);
+                    // it then sends the position to the update
                     draw(0, CursorInfo::pos([position.x, position.y]));
-
+                    // wait for the next frame
                     let wait = start_time + std::time::Duration::from_millis(TIMEPF);
                     glutin::event_loop::ControlFlow::WaitUntil(wait)
                 }
@@ -222,20 +217,16 @@ pub fn run() {
             } => {
                 match event {
                     glutin::event::DeviceEvent::Key(a) => {
-                        match a.scancode {
-                            1 => {
-                                // run_game = false;
-                            }
-                            _ => {}
-                        }
+                        // draw and then send the keypress to the snake obj
 
                         draw(a.scancode, CursorInfo::new());
                         //s println!("key: {}",a.scancode);
-
+                        // wait for next frame
                         let wait = start_time + std::time::Duration::from_millis(TIMEPF);
                         glutin::event_loop::ControlFlow::WaitUntil(wait)
                     }
                     glutin::event::DeviceEvent::Button { button, state: _ } => {
+                        // keyinput but from the mouse
                         if button == 1 {
                             draw(0, CursorInfo::button_press(true))
                         }
@@ -247,9 +238,11 @@ pub fn run() {
                 }
             }
             _ => {
+                // run game if it should run the game
                 if run_game {
                     draw(0, CursorInfo::new());
                 }
+                // wait for the next frame
                 let wait = start_time + std::time::Duration::from_millis(TIMEPF);
                 glutin::event_loop::ControlFlow::WaitUntil(wait)
             }
