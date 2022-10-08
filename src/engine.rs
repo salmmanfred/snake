@@ -5,7 +5,7 @@ extern crate glium_text_rusttype as glium_text;
 use std::time::Instant;
 
 // how much time between frames.
-const TIMEPF: u64 = 17;
+const TIMEPF: u64 = 20;
 
 
 #[derive(Copy, Clone)]
@@ -200,12 +200,13 @@ pub fn run() {
                     position,
                     modifiers: _,
                 } => {
+                    println!("w");
                     // logical position of the mouse 
                     let position = position.to_logical(scale_factor);
                     // it then sends the position to the update
                     draw(0, CursorInfo::pos([position.x, position.y]));
                     // wait for the next frame
-                    let wait = start_time + std::time::Duration::from_millis(TIMEPF);
+                    let wait = start_time + std::time::Duration::from_secs(100);
                     glutin::event_loop::ControlFlow::WaitUntil(wait)
                 }
 

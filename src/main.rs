@@ -92,7 +92,6 @@ pub struct Snake {
     data_text: Vec<((f32, f32, f32), String)>,
     // holds the width and height of the screen
     text_info: (f32, f32), 
-    
     // update loop
     rooms: Vec<Fne>,
     //current interface
