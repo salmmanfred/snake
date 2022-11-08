@@ -141,9 +141,8 @@ fn game_loop() -> Fne {
         }
        
         // only update the snake positions every 20th frame
-        if showi >= 15{
-            show = false;
-        }
+        
+        
         if show{
             s.text(-10., -9., 0.5, "Move: /\\ W| < A| > D| \\/ S"); 
         }
@@ -152,7 +151,13 @@ fn game_loop() -> Fne {
             x += ax;
             y += ay;
             showi += 1;
-            println!("{showi}");
+
+            if showi >= 15{
+                show = false;
+            }
+            if showi >= 50000{
+                showi = 0;
+            }
 
             // s.change_title("Mashalla");
 
