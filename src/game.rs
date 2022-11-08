@@ -15,6 +15,7 @@ const SPEDY: f32 = 0.1;
 // logic trait 
 pub trait GameLogic {
     fn rooms() -> Vec<Fne>;
+
 }
 // implement it with the all the windows
 impl GameLogic for Snake {
@@ -39,6 +40,9 @@ fn menu() -> Fne {
         s.change_title("Snake menu");
         // big text with the Snake name
         s.text(-5., 7., 1., "Snake");
+        s.text(-10., -9., 0.5, "Move: /\\ W| < A| > D| \\/ S"); 
+        
+
         // create the play button
         let btn_id = s.button([-0.3, -0.1], [0.6, 0.3, 4.], [5., 3.], WHITE, "Play");
         // check if the play button has yet been pressed
@@ -78,6 +82,9 @@ fn game_loop() -> Fne {
     let mut dir = 0;
 
     let now = Instant::now();
+    let mut show = true;
+    let mut showi = 0;
+
     let up = move |s: &mut Snake| {
         
         match s.key {
@@ -124,13 +131,29 @@ fn game_loop() -> Fne {
                 s.interface = 3;
                 println!("{},{} . {},{}", x, y, ax, ay);
             }
-            _ => {}
+            
+            0 =>{}
+
+            _ => {
+                show = true;
+                showi = 0;
+            }
         }
        
         // only update the snake positions every 20th frame
+        if showi >= 15{
+            show = false;
+        }
+        if show{
+            s.text(-10., -9., 0.5, "Move: /\\ W| < A| > D| \\/ S"); 
+        }
+
         if frame % 20 == 0 {
             x += ax;
             y += ay;
+            showi += 1;
+            println!("{showi}");
+
             // s.change_title("Mashalla");
 
             // check if the snake has hit itself

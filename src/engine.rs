@@ -200,7 +200,7 @@ pub fn run() {
                     position,
                     modifiers: _,
                 } => {
-                    println!("w");
+                   // println!("s");
                     // logical position of the mouse 
                     let position = position.to_logical(scale_factor);
                     // it then sends the position to the update
